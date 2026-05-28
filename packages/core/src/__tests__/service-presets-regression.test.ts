@@ -65,6 +65,23 @@ describe("service-presets regression", () => {
       expect(models.some((m) => m.id === "MiniMax-M2.7")).toBe(true);
     });
 
+    it("exposes Codex-for.me CodingPlan as an OpenAI Responses endpoint", async () => {
+      const preset = resolveServicePreset("codexForMeCodingPlan");
+      expect(preset).toMatchObject({
+        providerFamily: "openai",
+        api: "openai-responses",
+        baseUrl: "https://api-vip.codex-for.me/v1",
+        modelsBaseUrl: "https://api-vip.codex-for.me/v1",
+      });
+      expect(guessServiceFromBaseUrl("https://api-vip.codex-for.me/v1")).toBe("codexForMeCodingPlan");
+      const models = await listModelsForService("codexForMeCodingPlan");
+      expect(models.map((m) => m.id)).toEqual(expect.arrayContaining([
+        "gpt-5.4",
+        "gpt-5.3-codex",
+        "gpt-5.3-codex-spark",
+      ]));
+    });
+
     it("returns empty for custom service without apikey + baseUrl", async () => {
       const models = await listModelsForService("custom");
       expect(models).toEqual([]);

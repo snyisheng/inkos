@@ -1,6 +1,6 @@
 ---
 name: inkos
-description: Autonomous novel writing CLI agent with web workbench (InkOS Studio) - use for creative fiction writing, standalone short-fiction packages, cover generation, novel generation, style imitation, chapter continuation/import, EPUB export, AIGC detection, and fan fiction. Native English support with 10 built-in English genre profiles (LitRPG, Progression Fantasy, Isekai, Cultivation, System Apocalypse, Dungeon Core, Romantasy, Sci-Fi, Tower Climber, Cozy Fantasy). Also supports Chinese web novel genres (xuanhuan, xianxia, urban, horror, other). Multi-agent pipeline, two-phase writer (creative + settlement), stronger long-form chapter craft rules, hook-ledger payoff checks, 33-dimension auditing, token usage analytics, creative brief input, structured logging (JSON Lines), multi-model routing, custom OpenAI-compatible provider support, and InkOS Studio web UI for visual book management, short-fiction runs, cover generation, chapter review, real-time writing progress, market radar, and analytics.
+description: Autonomous novel writing CLI agent with web workbench (InkOS Studio) - use for creative fiction writing, standalone short-fiction packages, cover generation, novel generation, style imitation, chapter continuation/import, EPUB export, AIGC detection, and fan fiction. Native English support with 10 built-in English genre profiles (LitRPG, Progression Fantasy, Isekai, Cultivation, System Apocalypse, Dungeon Core, Romantasy, Sci-Fi, Tower Climber, Cozy Fantasy). Also supports Chinese web novel genres (xuanhuan, xianxia, urban, scifi, horror, other). Multi-agent pipeline, two-phase writer (creative + settlement), stronger long-form chapter craft rules, hook-ledger payoff checks, 33-dimension auditing, token usage analytics, creative brief input, structured logging (JSON Lines), multi-model routing, custom OpenAI-compatible provider support, and InkOS Studio web UI for visual book management, short-fiction runs, cover generation, chapter review, real-time writing progress, market radar, and analytics.
 version: 2.3.4
 metadata: { "openclaw": { "emoji": "📖", "requires": { "bins": ["inkos", "node"], "env": ["OPENAI_API_KEY"] }, "primaryEnv": "OPENAI_API_KEY", "homepage": "https://github.com/Narcooo/inkos", "install": [{ "id": "npm", "kind": "node", "package": "@actalk/inkos", "label": "Install InkOS (npm)" }] } }
 ---
@@ -19,7 +19,7 @@ Truth files are persisted as schema-validated JSON (`story/state/*.json`) with m
 ## When to Use InkOS
 
 - **English novel writing**: Native English support with 10 genre profiles (LitRPG, Progression Fantasy, Isekai, etc.). Set `--lang en`
-- **Chinese web novel writing**: 5 built-in Chinese genres (xuanhuan, xianxia, urban, horror, other)
+- **Chinese web novel writing**: 6 built-in Chinese genres (xuanhuan, xianxia, urban, scifi, horror, other)
 - **Fan fiction**: Create fanfic from source material with 4 modes (canon, au, ooc, cp)
 - **Batch chapter generation**: Generate multiple chapters with consistent quality
 - **Import & continue**: Import existing chapters from a text file, reverse-engineer truth files, and continue writing
@@ -84,7 +84,7 @@ inkos status
    # Or with a creative brief (your worldbuilding doc / ideas):
    inkos book create --title "My Novel Title" --genre xuanhuan --chapter-words 3000 --brief my-ideas.md
    ```
-   - Genres: `xuanhuan` (cultivation), `xianxia` (immortal), `urban` (city), `horror`, `other`
+   - Genres: `xuanhuan` (cultivation), `xianxia` (immortal), `urban` (city), `scifi` (science fiction), `horror`, `other`
    - Returns a `book-id` for all subsequent operations
 
 2. **Generate initial chapters** (e.g., 5 chapters):

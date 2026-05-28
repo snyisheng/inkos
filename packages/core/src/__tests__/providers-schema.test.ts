@@ -125,22 +125,22 @@ describe("providers structural integrity", () => {
     expect(nonCoding.length).toBe(30);
   });
 
-  it("B6：CodingPlan 8 个 provider 全部收录", () => {
+  it("B6：CodingPlan 9 个 provider 全部收录", () => {
     const ids = getAllEndpoints().map((p) => p.id);
     for (const id of [
       "kimiCodingPlan", "minimaxCodingPlan", "bailianCodingPlan",
       "glmCodingPlan", "volcengineCodingPlan", "opencodeCodingPlan",
-      "astronCodingPlan", "kimicode",
+      "astronCodingPlan", "kimicode", "codexForMeCodingPlan",
     ]) {
       expect(ids).toContain(id);
     }
   });
 
-  it("B6：总 provider 数 = 38 (30 base + 8 CodingPlan)", () => {
-    expect(getAllEndpoints().length).toBe(38);
+  it("B6：总 provider 数 = 39 (30 base + 9 CodingPlan)", () => {
+    expect(getAllEndpoints().length).toBe(39);
   });
 
-  it("B6：CodingPlan provider 都走 anthropic-messages", () => {
+  it("B6：CodingPlan provider 使用各自兼容协议", () => {
     for (const id of [
       "kimiCodingPlan", "minimaxCodingPlan", "bailianCodingPlan",
       "glmCodingPlan", "volcengineCodingPlan", "opencodeCodingPlan",
@@ -148,6 +148,7 @@ describe("providers structural integrity", () => {
     ]) {
       expect(getEndpoint(id)?.api).toBe("anthropic-messages");
     }
+    expect(getEndpoint("codexForMeCodingPlan")?.api).toBe("openai-responses");
   });
 
   it("R3：endpoint 不再出现 piProvider 字段（已移到 provider-to-pi-ai adapter）", () => {

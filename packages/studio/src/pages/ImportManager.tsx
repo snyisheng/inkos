@@ -186,6 +186,7 @@ export function ImportManager({ nav, theme, t }: { nav: Nav; theme: Theme; t: TF
                 <option value="other">Other</option>
                 <option value="xuanhuan">玄幻</option>
                 <option value="urban">都市</option>
+                <option value="scifi">科幻</option>
                 <option value="xianxia">仙侠</option>
               </select>
               <select value={ffLang} onChange={(e) => setFfLang(e.target.value as "zh" | "en")}

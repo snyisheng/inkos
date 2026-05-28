@@ -1,4 +1,4 @@
-import { getEndpoint } from "./providers/index.js";
+import { getAllEndpoints, getEndpoint } from "./providers/index.js";
 import { probeModelsFromUpstream } from "./providers/probe.js";
 import { isApiKeyOptionalForEndpoint } from "../utils/llm-endpoint-auth.js";
 
@@ -112,6 +112,15 @@ export function getWritingTemperature(service: string): number {
 }
 
 export function guessServiceFromBaseUrl(baseUrl: string): string {
+  for (const endpoint of getAllEndpoints()) {
+    if (endpoint.id === "custom" || !endpoint.baseUrl) continue;
+    try {
+      if (baseUrl.includes(new URL(endpoint.baseUrl).hostname)) return endpoint.id;
+    } catch {
+      continue;
+    }
+  }
+
   for (const [key, preset] of Object.entries(SERVICE_PRESETS)) {
     if (key === "custom" || !preset.baseUrl) continue;
     try {

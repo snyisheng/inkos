@@ -16,6 +16,10 @@ const SERVICE_QUICK_LINKS: Record<string, ReadonlyArray<ServiceQuickLink>> = {
     { label: "模型", href: "https://openrouter.ai/models" },
     { label: "文档", href: "https://openrouter.ai/docs/api-reference/overview" },
   ],
+  codexForMeCodingPlan: [
+    { label: "官网", href: "https://codex-for.me/" },
+    { label: "文档", href: "https://docs.codex-for.me/" },
+  ],
 };
 
 export function getServiceQuickLinks(serviceId: string): ReadonlyArray<ServiceQuickLink> {

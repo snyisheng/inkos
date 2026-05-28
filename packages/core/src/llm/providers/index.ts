@@ -41,6 +41,7 @@ import { GLM_CODING_PLAN } from "./endpoints/glmCodingPlan.js";
 import { VOLCENGINE_CODING_PLAN } from "./endpoints/volcengineCodingPlan.js";
 import { OPENCODE_CODING_PLAN } from "./endpoints/opencodeCodingPlan.js";
 import { ASTRON_CODING_PLAN } from "./endpoints/astronCodingPlan.js";
+import { CODEX_FOR_ME_CODING_PLAN } from "./endpoints/codexForMeCodingPlan.js";
 
 export type { InkosEndpoint, InkosModel, ApiProtocol, EndpointGroup } from "./types.js";
 
@@ -54,8 +55,8 @@ const ALL_PROVIDERS: readonly InkosEndpoint[] = [
   SPARK, SENSENOVA, TENCENTCLOUD, XIAOMI_MIMO, LONGCAT, INTERNLM,
   ZEROONE, AI360,
   OLLAMA, OPENROUTER, CUSTOM, MISTRAL, XAI, NEWAPI, GITHUB_COPILOT, KKAIAPI,
-  // B6 CodingPlan（8 个）
-  KIMI_CODING_PLAN, KIMI_CODE, MINIMAX_CODING_PLAN, BAILIAN_CODING_PLAN, GLM_CODING_PLAN, VOLCENGINE_CODING_PLAN, OPENCODE_CODING_PLAN, ASTRON_CODING_PLAN,
+  // B6 CodingPlan（9 个）
+  KIMI_CODING_PLAN, KIMI_CODE, MINIMAX_CODING_PLAN, BAILIAN_CODING_PLAN, GLM_CODING_PLAN, VOLCENGINE_CODING_PLAN, OPENCODE_CODING_PLAN, ASTRON_CODING_PLAN, CODEX_FOR_ME_CODING_PLAN,
 ];
 
 const PROVIDERS_BY_ID: Map<string, InkosEndpoint> = new Map(

@@ -22,7 +22,7 @@ describe("InkosEndpoint.group", () => {
     ].sort());
     expect(byGroup("local")).toEqual(["githubCopilot", "ollama"].sort());
     expect(byGroup("codingPlan")).toEqual([
-      "astronCodingPlan", "bailianCodingPlan", "glmCodingPlan", "kimiCodingPlan", "kimicode",
+      "astronCodingPlan", "bailianCodingPlan", "codexForMeCodingPlan", "glmCodingPlan", "kimiCodingPlan", "kimicode",
       "minimaxCodingPlan", "opencodeCodingPlan", "volcengineCodingPlan",
     ].sort());
   });
