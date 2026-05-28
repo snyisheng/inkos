@@ -9,5 +9,23 @@
     },
     "maxConcurrentBooks": 3
   },
-  "language": "zh"
+  "language": "zh",
+  "llm": {
+    "services": [
+      {
+        "service": "codexForMeCodingPlan",
+        "temperature": 0.7,
+        "apiFormat": "chat",
+        "stream": true
+      }
+    ],
+    "defaultModel": "codex-auto-review",
+    "service": "codexForMeCodingPlan",
+    "provider": "openai",
+    "baseUrl": "https://w.ciykj.cn/v1",
+    "model": "codex-auto-review",
+    "temperature": 0.7,
+    "apiFormat": "chat",
+    "stream": true
+  }
 }

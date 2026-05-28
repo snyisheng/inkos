@@ -17,8 +17,8 @@ const SERVICE_QUICK_LINKS: Record<string, ReadonlyArray<ServiceQuickLink>> = {
     { label: "文档", href: "https://openrouter.ai/docs/api-reference/overview" },
   ],
   codexForMeCodingPlan: [
-    { label: "官网", href: "https://codex-for.me/" },
-    { label: "文档", href: "https://docs.codex-for.me/" },
+    { label: "官网", href: "https://w.ciykj.cn/" },
+    { label: "控制台", href: "https://w.ciykj.cn/login" },
   ],
 };
 

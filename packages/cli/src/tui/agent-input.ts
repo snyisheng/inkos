@@ -230,7 +230,9 @@ function inferGenre(instruction: string): string {
   if (/悬疑|推理|mystery/i.test(instruction)) return "mystery";
   if (/玄幻|xuanhuan/i.test(instruction)) return "xuanhuan";
   if (/科幻/.test(instruction)) return "scifi";
-  if (/sci[-\s]?fi/i.test(instruction)) return /[\u4e00-\u9fff]/.test(instruction) ? "scifi" : "sci-fi";
+  if (/sci[-\s]?fi/i.test(instruction)) {
+    return /[\u4e00-\u9fff]/.test(instruction) ? "scifi" : "sci-fi";
+  }
   if (/言情|甜宠|romance/i.test(instruction)) return "romance";
   return "other";
 }

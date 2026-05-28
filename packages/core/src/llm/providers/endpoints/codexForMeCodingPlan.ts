@@ -1,29 +1,30 @@
 /**
- * Codex-for.me Coding Plan
+ * TTAPI CodingPlan 中转站
  *
- * - 官网：https://codex-for.me/
- * - 文档：https://docs.codex-for.me/
- * - API 入口：https://api-vip.codex-for.me/v1
+ * - 官网：https://w.ciykj.cn/
+ * - 控制台：https://w.ciykj.cn/login
+ * - API 入口：https://w.ciykj.cn/v1
  *
- * Codex-for.me 提供面向 Codex / OpenAI Responses 兼容客户端的编码订阅入口。
- * inkos 走 OpenAI Responses 协议接入，避免用户把它配置成 custom 后还要手动选择
- * responses + 非流式 transport。
+ * TTAPI 是 OpenAI-compatible 中转站，站点公开入口为 https://w.ciykj.cn，
+ * InkOS provider bank 里使用带 /v1 的 baseUrl，以便内部 OpenAI Responses
+ * 客户端正确拼接 /responses 和 /models 路径。
  */
 import type { InkosEndpoint } from "../types.js";
 
 export const CODEX_FOR_ME_CODING_PLAN: InkosEndpoint = {
   id: "codexForMeCodingPlan",
-  label: "Codex-for.me Coding Plan",
+  label: "Codex CodingPlan 中转站 (TTAPI)",
   group: "codingPlan",
   api: "openai-responses",
-  baseUrl: "https://api-vip.codex-for.me/v1",
-  modelsBaseUrl: "https://api-vip.codex-for.me/v1",
+  baseUrl: "https://w.ciykj.cn/v1",
+  modelsBaseUrl: "https://w.ciykj.cn/v1",
   checkModel: "gpt-5.4",
   transportDefaults: { apiFormat: "responses", stream: false },
   temperatureRange: [0, 2],
   defaultTemperature: 1,
   writingTemperature: 1,
   models: [
+    { id: "gpt-5.5", maxOutput: 128000, contextWindowTokens: 1050000, enabled: true },
     { id: "gpt-5.4", maxOutput: 128000, contextWindowTokens: 1050000, enabled: true, releasedAt: "2026-03-05" },
     { id: "gpt-5.4-pro", maxOutput: 128000, contextWindowTokens: 1050000, releasedAt: "2026-03-05" },
     { id: "gpt-5.4-mini", maxOutput: 128000, contextWindowTokens: 400000, enabled: true, releasedAt: "2026-03-18" },

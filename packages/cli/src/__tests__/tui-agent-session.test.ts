@@ -190,6 +190,30 @@ describe("tui agent session bridge", () => {
     expect(persisted.activeBookId).toBe("雾灯小巷");
   });
 
+  it("routes Chinese science-fiction create-book instructions to the scifi profile", async () => {
+    const initBookSpy = vi.spyOn(
+      (await import("@actalk/inkos-core")).PipelineRunner.prototype as any,
+      "initBook",
+    );
+    const { processTuiAgentInput } = await import("../tui/agent-input.js");
+    const session = createProjectSession(projectRoot);
+
+    await processTuiAgentInput({
+      projectRoot,
+      input: "创建一本中文科幻小说，标题《群星回声》，目标平台番茄。信息足够，请直接建书。",
+      session,
+    });
+
+    expect(initBookSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "群星回声",
+        genre: "scifi",
+        platform: "tomato",
+      }),
+      expect.any(Object),
+    );
+  });
+
   it("routes write-next instructions directly to the writer when a book is active", async () => {
     const { processTuiAgentInput } = await import("../tui/agent-input.js");
     const session = {
