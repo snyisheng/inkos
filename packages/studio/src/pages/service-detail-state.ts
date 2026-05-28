@@ -107,6 +107,7 @@ export async function saveServiceConfig(args: {
   readonly effectiveServiceId: string;
   readonly serviceId: string;
   readonly isCustom: boolean;
+  readonly baseUrlOverrideEnabled?: boolean;
   readonly resolvedCustomName: string;
   readonly apiKey: string;
   readonly baseUrl: string;
@@ -124,6 +125,7 @@ export async function saveServiceConfig(args: {
   const fetchJsonImpl = args.fetchJsonImpl ?? fetchJson;
   const trimmedKey = args.apiKey.trim();
   const trimmedBaseUrl = args.baseUrl.trim();
+  const shouldUseBaseUrl = args.isCustom || Boolean(args.baseUrlOverrideEnabled && trimmedBaseUrl);
 
   if (!trimmedKey && !args.isCustom) {
     return {
@@ -140,7 +142,7 @@ export async function saveServiceConfig(args: {
     };
   }
 
-  const verifiedBaseUrl = args.isCustom ? trimmedBaseUrl : "";
+  const verifiedBaseUrl = shouldUseBaseUrl ? trimmedBaseUrl : "";
   const verified = args.verifiedProbe;
   const canReuseVerifiedProbe = Boolean(
     verified
@@ -164,7 +166,7 @@ export async function saveServiceConfig(args: {
         apiKey: trimmedKey,
         apiFormat: args.apiFormat,
         stream: args.stream,
-        ...(args.isCustom ? { baseUrl: trimmedBaseUrl } : {}),
+        ...(shouldUseBaseUrl ? { baseUrl: trimmedBaseUrl } : {}),
       }, { fetchJsonImpl });
     } catch (error) {
       return {
@@ -187,7 +189,7 @@ export async function saveServiceConfig(args: {
   const detectedConfig = probe.detected ?? null;
   const savedApiFormat = detectedConfig?.apiFormat ?? args.apiFormat;
   const savedStream = typeof detectedConfig?.stream === "boolean" ? detectedConfig.stream : args.stream;
-  const savedBaseUrl = args.isCustom ? (detectedConfig?.baseUrl ?? trimmedBaseUrl) : undefined;
+  const savedBaseUrl = shouldUseBaseUrl ? (detectedConfig?.baseUrl ?? trimmedBaseUrl) : undefined;
 
   await fetchJsonImpl(`/services/${encodeURIComponent(args.effectiveServiceId)}/secret`, {
     method: "PUT",
@@ -207,10 +209,8 @@ export async function saveServiceConfig(args: {
           temperature: parseFloat(args.temperature),
           apiFormat: savedApiFormat,
           stream: savedStream,
-          ...(args.isCustom ? {
-            name: args.resolvedCustomName,
-            baseUrl: savedBaseUrl,
-          } : {}),
+          ...(args.isCustom ? { name: args.resolvedCustomName } : {}),
+          ...(savedBaseUrl ? { baseUrl: savedBaseUrl } : {}),
         },
       ],
     }),

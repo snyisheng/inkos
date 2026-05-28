@@ -130,6 +130,69 @@ describe("saveServiceConfig", () => {
     });
   });
 
+  it("persists an optional Base URL override for built-in services", async () => {
+    const calls: string[] = [];
+    const bodies: unknown[] = [];
+    const fetchJsonImpl = vi.fn(async (path: string, init?: { body?: string }) => {
+      calls.push(path);
+      if (init?.body) bodies.push(JSON.parse(init.body));
+      if (path === "/services/codexForMeCodingPlan/test") {
+        return {
+          ok: true,
+          models: [{ id: "gpt-5.5" }],
+          selectedModel: "gpt-5.5",
+          detected: { apiFormat: "responses", stream: false, baseUrl: "https://w.ciykj.cn/v1" },
+        };
+      }
+      if (path === "/services/codexForMeCodingPlan/secret") return { ok: true };
+      if (path === "/services/config") return { ok: true };
+      throw new Error(`unexpected path: ${path}`);
+    });
+
+    const result = await saveServiceConfig({
+      effectiveServiceId: "codexForMeCodingPlan",
+      serviceId: "codexForMeCodingPlan",
+      isCustom: false,
+      baseUrlOverrideEnabled: true,
+      resolvedCustomName: "",
+      apiKey: "sk-live",
+      baseUrl: "https://w.ciykj.cn/v1",
+      apiFormat: "responses",
+      stream: false,
+      temperature: "1",
+      detectedModel: "",
+      fetchJsonImpl: fetchJsonImpl as never,
+    });
+
+    expect(calls).toEqual([
+      "/services/codexForMeCodingPlan/test",
+      "/services/codexForMeCodingPlan/secret",
+      "/services/config",
+    ]);
+    expect(bodies).toEqual([
+      { apiKey: "sk-live", apiFormat: "responses", stream: false, baseUrl: "https://w.ciykj.cn/v1" },
+      { apiKey: "sk-live" },
+      {
+        service: "codexForMeCodingPlan",
+        defaultModel: "gpt-5.5",
+        services: [
+          {
+            service: "codexForMeCodingPlan",
+            temperature: 1,
+            apiFormat: "responses",
+            stream: false,
+            baseUrl: "https://w.ciykj.cn/v1",
+          },
+        ],
+      },
+    ]);
+    expect(result).toEqual({
+      detectedModel: "gpt-5.5",
+      detectedConfig: { apiFormat: "responses", stream: false, baseUrl: "https://w.ciykj.cn/v1" },
+      status: { state: "connected", models: [{ id: "gpt-5.5" }] },
+    });
+  });
+
   it("reuses a matching successful test result when saving", async () => {
     const calls: string[] = [];
     const bodies: unknown[] = [];

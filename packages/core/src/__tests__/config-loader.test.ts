@@ -117,6 +117,44 @@ describe("loadProjectConfig local provider auth", () => {
     expect(config.llm.temperature).toBe(1);
   });
 
+  it("loads object-shaped service config with a built-in baseUrl override", async () => {
+    root = await mkdtemp(join(tmpdir(), "inkos-config-loader-service-baseurl-"));
+    for (const key of ENV_KEYS) {
+      previousEnv.set(key, process.env[key]);
+      process.env[key] = "";
+    }
+
+    await writeFile(join(root, "inkos.json"), JSON.stringify({
+      name: "service-baseurl-project",
+      version: "0.1.0",
+      language: "zh",
+      llm: {
+        configSource: "studio",
+        service: "codexForMeCodingPlan",
+        services: {
+          codexForMeCodingPlan: {
+            baseUrl: "https://relay.example.com/v1",
+            temperature: 1,
+            apiFormat: "responses",
+            stream: false,
+          },
+        },
+        defaultModel: "gpt-5.4",
+      },
+      notify: [],
+    }, null, 2), "utf-8");
+
+    const config = await loadProjectConfig(root, { consumer: "studio", requireApiKey: false });
+
+    expect(config.llm.service).toBe("codexForMeCodingPlan");
+    expect(config.llm.provider).toBe("openai");
+    expect(config.llm.baseUrl).toBe("https://relay.example.com/v1");
+    expect(config.llm.model).toBe("gpt-5.4");
+    expect(config.llm.apiFormat).toBe("responses");
+    expect(config.llm.stream).toBe(false);
+    expect(config.llm.temperature).toBe(1);
+  });
+
   it("derives provider/baseUrl from the MiniMax preset single source of truth", async () => {
     root = await mkdtemp(join(tmpdir(), "inkos-config-loader-minimax-"));
     for (const key of ENV_KEYS) {

@@ -14,11 +14,11 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8">
       {/* Logo — cinematic scale */}
       <div className="mb-16 text-center">
-        <div className="flex items-baseline justify-center gap-1.5 mb-4">
-          <span className="font-serif text-6xl italic text-primary">Ink</span>
-          <span className="text-5xl font-semibold tracking-tight text-foreground">OS</span>
+        <div className="flex items-baseline justify-center gap-2 mb-4">
+          <span className="font-mono text-5xl font-bold tracking-tight text-primary">Story</span>
+          <span className="font-mono text-5xl font-bold tracking-tight text-foreground">Pilot</span>
         </div>
-        <div className="text-base text-muted-foreground tracking-widest uppercase">Studio</div>
+        <div className="text-base text-muted-foreground tracking-widest uppercase">AI Novel Command Deck</div>
       </div>
 
       {/* Language cards — generous, distinct, immersive */}
@@ -27,7 +27,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
           onClick={() => handleSelect("zh")}
           onMouseEnter={() => setHovering("zh")}
           onMouseLeave={() => setHovering(null)}
-          className={`group w-80 border rounded-lg p-10 text-left transition-all duration-300 ${
+          className={`group w-80 border rounded-3xl p-10 text-left transition-all duration-300 backdrop-blur ${
             selected === "zh"
               ? "border-primary bg-primary/10 scale-[1.02]"
               : hovering === "zh"
@@ -35,7 +35,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
                 : "border-border bg-card/50"
           }`}
         >
-          <div className="font-serif text-3xl mb-4 text-foreground">中文创作</div>
+          <div className="font-mono text-3xl font-semibold mb-4 text-foreground">中文创作</div>
           <div className="text-base text-foreground/70 leading-relaxed mb-6">
             玄幻 · 仙侠 · 都市 · 科幻 · 恐怖 · 通用
           </div>
@@ -48,7 +48,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
           onClick={() => handleSelect("en")}
           onMouseEnter={() => setHovering("en")}
           onMouseLeave={() => setHovering(null)}
-          className={`group w-80 border rounded-lg p-10 text-left transition-all duration-300 ${
+          className={`group w-80 border rounded-3xl p-10 text-left transition-all duration-300 backdrop-blur ${
             selected === "en"
               ? "border-primary bg-primary/10 scale-[1.02]"
               : hovering === "en"
@@ -56,7 +56,7 @@ export function LanguageSelector({ onSelect }: { onSelect: (lang: "zh" | "en") =
                 : "border-border bg-card/50"
           }`}
         >
-          <div className="font-serif text-3xl italic mb-4 text-foreground">English Writing</div>
+          <div className="font-mono text-3xl font-semibold mb-4 text-foreground">English Writing</div>
           <div className="text-base text-foreground/70 leading-relaxed mb-6">
             LitRPG · Progression · Romantasy · Sci-Fi · Isekai
           </div>

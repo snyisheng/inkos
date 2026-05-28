@@ -9,6 +9,7 @@ export interface ServiceInfo {
   readonly service: string;
   readonly label: string;
   readonly group?: EndpointGroup;
+  readonly baseUrl?: string;
   readonly connected: boolean;
 }
 

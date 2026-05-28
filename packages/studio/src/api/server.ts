@@ -625,6 +625,7 @@ function normalizeServiceEntry(serviceId: string, value: Record<string, unknown>
 
   return {
     service: serviceId,
+    ...(typeof value.baseUrl === "string" && value.baseUrl.length > 0 ? { baseUrl: value.baseUrl } : {}),
     ...(typeof value.temperature === "number" ? { temperature: value.temperature } : {}),
     ...(value.apiFormat === "chat" || value.apiFormat === "responses" ? { apiFormat: value.apiFormat } : {}),
     ...(typeof value.stream === "boolean" ? { stream: value.stream } : {}),
@@ -761,18 +762,16 @@ async function readEnvConfigStatus(root: string): Promise<EnvConfigStatus> {
 async function resolveConfiguredServiceBaseUrl(root: string, serviceId: string, inlineBaseUrl?: string): Promise<string | undefined> {
   if (inlineBaseUrl?.trim()) return inlineBaseUrl.trim();
 
-  if (!isCustomServiceId(serviceId)) {
-    return resolveServicePreset(serviceId)?.baseUrl;
-  }
-
   try {
     const config = await loadRawConfig(root);
     const services = normalizeServiceConfig((config.llm as Record<string, unknown> | undefined)?.services);
     const matched = services.find((entry) => serviceConfigKey(entry) === serviceId);
-    return matched?.baseUrl;
+    if (matched?.baseUrl) return matched.baseUrl;
   } catch {
-    return undefined;
+    // Fall through to preset defaults for built-in services.
   }
+
+  return isCustomServiceId(serviceId) ? undefined : resolveServicePreset(serviceId)?.baseUrl;
 }
 
 async function resolveConfiguredServiceEntry(root: string, serviceId: string): Promise<ServiceConfigEntry | undefined> {
@@ -1004,9 +1003,17 @@ async function fetchModelsFromServiceBaseUrl(
   const endpoint = isCustomServiceId(serviceId)
     ? undefined
     : getAllEndpoints().find((ep) => ep.id === serviceId);
+  const usesBaseUrlOverride = Boolean(
+    endpoint
+      && baseUrl
+      && baseUrl !== endpoint.baseUrl
+      && baseUrl !== endpoint.modelsBaseUrl,
+  );
   const modelsBaseUrl = isCustomServiceId(serviceId)
     ? baseUrl
-    : endpoint?.modelsBaseUrl ?? (endpoint ? baseUrl : resolveServiceModelsBaseUrl(serviceId) ?? baseUrl);
+    : usesBaseUrlOverride
+      ? baseUrl
+      : endpoint?.modelsBaseUrl ?? (endpoint ? baseUrl : resolveServiceModelsBaseUrl(serviceId) ?? baseUrl);
   const modelsUrl = modelsBaseUrl.replace(/\/$/, "") + "/models";
   try {
     const res = await fetchWithProxy(modelsUrl, {
@@ -1703,6 +1710,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string) {
       service: ep.id,
       label: ep.label,
       group: ep.group,
+      baseUrl: ep.baseUrl,
       connected: Boolean(secrets.services[ep.id]?.apiKey),
     })).sort(compareServiceListItems);
 
@@ -1716,6 +1724,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string) {
             service: secretKey,
             label: svc.name ?? "Custom",
             group: undefined,
+            baseUrl: svc.baseUrl ?? "",
             connected: Boolean(secrets.services[secretKey]?.apiKey),
           });
         }
@@ -2038,11 +2047,23 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string) {
       }
     }
 
+    const endpoint = isCustomServiceId(service)
+      ? undefined
+      : getAllEndpoints().find((ep) => ep.id === service);
+    const liveModelsBaseUrl = isCustomServiceId(service)
+      ? resolvedBaseUrl ?? undefined
+      : endpoint
+        && resolvedBaseUrl
+        && resolvedBaseUrl !== endpoint.baseUrl
+        && resolvedBaseUrl !== endpoint.modelsBaseUrl
+        ? resolvedBaseUrl
+        : undefined;
+
     // B13: 走 listModelsForService 走 live probe + bank 交叉，返回带元数据的 models
     const enriched = await listModelsForService(
       isCustomServiceId(service) ? "custom" : service,
       apiKey,
-      isCustomServiceId(service) ? resolvedBaseUrl ?? undefined : undefined,
+      liveModelsBaseUrl,
     );
     const models = filterTextChatModels(enriched).map((m) => ({
       id: m.id,

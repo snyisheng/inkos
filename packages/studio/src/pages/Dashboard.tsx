@@ -4,7 +4,6 @@ import { useServiceStore } from "../store/service";
 import type { SSEMessage } from "../hooks/use-sse";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
-import { useColors } from "../hooks/use-colors";
 import { deriveActiveBookIds, shouldRefetchBookCollections } from "../hooks/use-book-activity";
 import { ConfirmDialog } from "../components/ConfirmDialog";
 import {
@@ -21,7 +20,6 @@ import {
   Trash2,
   Settings,
   Download,
-  FileInput,
 } from "lucide-react";
 
 interface BookSummary {
@@ -127,8 +125,7 @@ function BookMenu({ bookId, bookTitle, nav, t, onDelete, onOpenChange }: {
   );
 }
 
-export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: ReadonlyArray<SSEMessage> }; theme: Theme; t: TFunction }) {
-  const c = useColors(theme);
+export function Dashboard({ nav, sse, theme: _theme, t }: { nav: Nav; sse: { messages: ReadonlyArray<SSEMessage> }; theme: Theme; t: TFunction }) {
   const [menuOpenBookId, setMenuOpenBookId] = useState<string | null>(null);
   const { data, loading, error, refetch } = useApi<{ books: ReadonlyArray<BookSummary> }>("/books");
   const writingBooks = useMemo(() => deriveActiveBookIds(sse.messages), [sse.messages]);
@@ -136,6 +133,10 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
   const fetchServices = useServiceStore((s) => s.fetchServices);
   useEffect(() => { void fetchServices(); }, [fetchServices]);
   const hasServices = serviceStoreServices.some((s) => s.connected);
+
+  const books = data?.books ?? [];
+  const activeBooks = books.filter((book) => book.status === "active").length;
+  const totalChapters = books.reduce((sum, book) => sum + book.chaptersWritten, 0);
 
   const logEvents = sse.messages.filter((m) => m.event === "log").slice(-8);
   const progressEvent = sse.messages.filter((m) => m.event === "llm:progress").slice(-1)[0];
@@ -163,14 +164,15 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
     </div>
   );
 
-  if (!data?.books.length) {
+  if (!books.length) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center fade-in">
-        <div className="w-20 h-20 rounded-full bg-primary/5 flex items-center justify-center mb-8">
-          <BookOpen size={40} className="text-primary/20" />
+        <div className="relative w-24 h-24 rounded-3xl bg-primary/10 border border-primary/30 flex items-center justify-center mb-8 shadow-2xl shadow-primary/10 overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15),transparent_58%)]" />
+          <BookOpen size={42} className="text-primary" />
         </div>
-        <h2 className="font-serif text-3xl italic text-foreground/80 mb-3">{t("dash.noBooks")}</h2>
-        <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mb-10">
+        <h2 className="font-mono text-3xl uppercase tracking-tight text-foreground/90 mb-3">{t("dash.noBooks")}</h2>
+        <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-10">
           {t("dash.createFirst")}
         </p>
         <button
@@ -185,9 +187,9 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
   }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       {!hasServices && (
-        <div className="rounded-lg border border-border/60 bg-card px-5 py-4 mb-8 flex items-center justify-between gap-4">
+        <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-5 py-4 mb-8 flex items-center justify-between gap-4 shadow-lg shadow-amber-500/5">
           <div>
             <div className="text-sm font-medium">还没有配置 AI 模型</div>
             <div className="text-xs text-muted-foreground mt-0.5">配好一个服务商才能开始创作</div>
@@ -200,45 +202,66 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
           </button>
         </div>
       )}
-      <div className="flex items-end justify-between border-b border-border/40 pb-8">
-        <div>
-          <h1 className="font-serif text-4xl mb-2">{t("dash.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("dash.subtitle")}</p>
+      <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/70 p-7 shadow-2xl shadow-primary/10 backdrop-blur-xl">
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.10),transparent_26%)]" />
+        <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-primary">
+              <Zap size={12} />
+              StoryPilot Command Deck
+            </div>
+            <h1 className="font-mono text-4xl font-bold uppercase tracking-tight mb-2">{t("dash.title")}</h1>
+            <p className="text-sm text-muted-foreground max-w-xl">{t("dash.subtitle")}</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3 min-w-[320px]">
+            <div className="command-chip rounded-2xl px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Projects</div>
+              <div className="mt-1 font-mono text-2xl font-bold">{books.length}</div>
+            </div>
+            <div className="command-chip rounded-2xl px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Active</div>
+              <div className="mt-1 flex items-center gap-2 font-mono text-2xl font-bold text-emerald-500"><CheckCircle2 size={18} />{activeBooks}</div>
+            </div>
+            <div className="command-chip rounded-2xl px-4 py-3">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Chapters</div>
+              <div className="mt-1 font-mono text-2xl font-bold">{totalChapters}</div>
+            </div>
+          </div>
+          <button
+            onClick={nav.toBookCreate}
+            className="group flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-bold bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/25"
+          >
+            <Plus size={16} />
+            {t("nav.newBook")}
+          </button>
         </div>
-        <button
-          onClick={nav.toBookCreate}
-          className="group flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
-        >
-          <Plus size={16} />
-          {t("nav.newBook")}
-        </button>
-      </div>
+      </section>
 
       <div className="grid gap-6">
-        {data.books.map((book, index) => {
+        {books.map((book, index) => {
           const isWriting = writingBooks.has(book.id);
           const staggerClass = `stagger-${Math.min(index + 1, 5)}`;
           return (
             <div
               key={book.id}
-              className={`paper-sheet group relative rounded-2xl fade-in ${staggerClass} ${menuOpenBookId === book.id ? "z-50" : ""}`}
+              className={`paper-sheet group relative rounded-3xl fade-in ${staggerClass} ${menuOpenBookId === book.id ? "z-50" : ""}`}
             >
-              <div className="p-8 flex items-start justify-between">
+              <div className="relative p-8 flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 rounded-lg bg-primary/5 text-primary">
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
                       <BookOpen size={20} />
                     </div>
                     <button
                       onClick={() => nav.toBook(book.id)}
-                      className="font-serif text-2xl hover:text-primary transition-all text-left truncate block font-medium hover:underline underline-offset-4 decoration-primary/30"
+                      className="font-mono text-2xl hover:text-primary transition-all text-left truncate block font-semibold tracking-tight hover:underline underline-offset-4 decoration-primary/30"
                     >
                       {book.title}
                     </button>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-[13px] text-muted-foreground font-medium">
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-secondary/50">
+                    <div className="command-chip flex items-center gap-1.5 px-2 py-0.5 rounded-lg">
                       <span className="uppercase tracking-wider">{book.genre}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -328,15 +351,15 @@ export function Dashboard({ nav, sse, theme, t }: { nav: Nav; sse: { messages: R
 
       {/* Modern writing progress panel */}
       {writingBooks.size > 0 && logEvents.length > 0 && (
-        <div className="glass-panel rounded-2xl p-8 border-primary/20 bg-primary/[0.02] shadow-2xl shadow-primary/5 fade-in">
+        <div className="glass-panel rounded-3xl p-8 border-primary/25 bg-primary/[0.03] shadow-2xl shadow-primary/10 fade-in">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                 <Flame size={18} className="animate-pulse" />
               </div>
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-widest text-primary"> Manuscript Foundry</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Real-time LLM generation tracking</p>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-primary"> StoryPilot Autopilot</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Real-time agent generation telemetry</p>
               </div>
             </div>
             {progressEvent && (

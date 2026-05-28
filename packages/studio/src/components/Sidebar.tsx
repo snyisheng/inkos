@@ -25,7 +25,7 @@ import {
   Terminal,
   Plus,
   MessageSquare,
-  ScrollText,
+  Radar,
   Boxes,
   Wand2,
   FileInput,
@@ -215,19 +215,21 @@ export function Sidebar({ nav, activePage, sse, t }: {
   };
 
   return (
-    <aside className="w-[260px] shrink-0 border-r border-border bg-background/80 backdrop-blur-md flex flex-col h-full overflow-hidden select-none">
+    <aside className="w-[272px] shrink-0 border-r border-border/60 bg-background/72 backdrop-blur-xl flex flex-col h-full overflow-hidden select-none shadow-2xl shadow-primary/5">
       {/* Logo Area */}
-      <div className="px-6 py-8">
+      <div className="px-6 py-7">
         <button
           onClick={nav.toDashboard}
-          className="group flex items-center gap-2 hover:opacity-80 transition-all duration-300"
+          className="group flex items-center gap-3 hover:opacity-90 transition-all duration-300"
         >
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-            <ScrollText size={18} />
+          <div className="relative w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 group-hover:scale-105 transition-transform overflow-hidden">
+            <span className="absolute inset-0 rounded-xl border border-white/20" />
+            <span className="absolute h-px w-full bg-white/35 animate-[scan_2.8s_ease-in-out_infinite]" />
+            <Radar size={18} />
           </div>
           <div className="flex flex-col">
-            <span className="font-serif text-xl leading-none italic font-medium">InkOS</span>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-bold mt-1">Studio</span>
+            <span className="font-mono text-lg leading-none font-bold tracking-tight">StoryPilot</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-primary font-bold mt-1">Command Deck</span>
           </div>
         </button>
       </div>
@@ -237,7 +239,7 @@ export function Sidebar({ nav, activePage, sse, t }: {
         {/* Books Section */}
         <div>
           <div className="px-3 mb-3 flex items-center justify-between">
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-bold">
               {t("nav.books")}
             </span>
             <button
@@ -354,7 +356,7 @@ export function Sidebar({ nav, activePage, sse, t }: {
         {/* System Section */}
         <div>
           <div className="px-3 mb-3">
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-bold">
               {t("nav.system")}
             </span>
           </div>
@@ -391,7 +393,7 @@ export function Sidebar({ nav, activePage, sse, t }: {
         {/* Tools Section */}
         <div>
           <div className="px-3 mb-3">
-            <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">
+            <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground font-bold">
               {t("nav.tools")}
             </span>
           </div>
@@ -407,10 +409,10 @@ export function Sidebar({ nav, activePage, sse, t }: {
                       void loadSessionList(null);
                     }
                   }}
-                  className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                  className={`flex min-w-0 flex-1 items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
                     activePage === "chat"
-                      ? "bg-secondary text-foreground font-medium shadow-sm border border-border"
-                      : "text-foreground font-medium hover:text-foreground hover:bg-secondary/50"
+                      ? "bg-primary/10 text-foreground font-semibold shadow-sm border border-primary/30"
+                      : "text-foreground font-medium hover:text-foreground hover:bg-secondary/60"
                   }`}
                 >
                   <MessageSquare size={16} className={activePage === "chat" ? "text-primary" : "text-muted-foreground group-hover/chat:text-foreground"} />
@@ -590,6 +592,13 @@ export function Sidebar({ nav, activePage, sse, t }: {
         onConfirm={() => void handleDeleteConfirm()}
         onCancel={() => setDeleteTarget(null)}
       />
+      <style>{`
+        @keyframes scan {
+          0%, 100% { transform: translateY(-18px); opacity: 0; }
+          18%, 82% { opacity: 1; }
+          50% { transform: translateY(18px); }
+        }
+      `}</style>
     </aside>
   );
 }
@@ -632,10 +641,10 @@ function SidebarItem({ label, icon, active, onClick, badge, badgeColor }: {
   return (
     <button
       onClick={onClick}
-      className={`w-full group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+      className={`w-full group flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all duration-200 ${
         active
-          ? "bg-secondary text-foreground font-medium shadow-sm border border-border"
-          : "text-foreground font-medium hover:text-foreground hover:bg-secondary/50"
+          ? "bg-primary/10 text-foreground font-semibold shadow-sm border border-primary/30"
+          : "text-foreground font-medium hover:text-foreground hover:bg-secondary/60"
       }`}
     >
       <span className={`transition-colors ${active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"}`}>

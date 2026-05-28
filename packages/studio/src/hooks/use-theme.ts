@@ -9,14 +9,6 @@ interface ThemeStorageLike {
   setItem(key: string, value: string): void;
 }
 
-export function getTimeBasedThemeForHour(hour: number): Theme {
-  return hour >= 6 && hour < 18 ? "light" : "dark";
-}
-
-function getTimeBasedTheme(): Theme {
-  return getTimeBasedThemeForHour(new Date().getHours());
-}
-
 function getThemeStorage(): ThemeStorageLike | null {
   if (typeof window === "undefined") {
     return null;
@@ -34,11 +26,11 @@ export function readStoredTheme(storage: Pick<ThemeStorageLike, "getItem"> | nul
   return storedTheme === "light" || storedTheme === "dark" ? storedTheme : null;
 }
 
-export function resolveThemePreference(params: {
+export function resolveThemePreference({ storedTheme }: {
   readonly hour: number;
   readonly storedTheme: Theme | null;
 }): Theme {
-  return params.storedTheme ?? getTimeBasedThemeForHour(params.hour);
+  return storedTheme ?? "dark";
 }
 
 export function useTheme() {

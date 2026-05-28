@@ -43,6 +43,7 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
 
   const svc = services.find((s) => s.service === serviceId);
   const isCustom = serviceId === "custom" || serviceId.startsWith("custom:");
+  const canConfigureBaseUrl = isCustom || Boolean(svc?.baseUrl);
   const persistedCustomName = serviceId.startsWith("custom:") ? decodeURIComponent(serviceId.slice("custom:".length)) : "";
 
   // -- Local form state --
@@ -66,11 +67,14 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
       .then((data) => {
         if (cancelled) return;
         const matched = matchServiceConfigEntryForDetail(data.services ?? [], serviceId);
-        if (!matched) return;
+        if (!matched) {
+          if (!isCustom) setBaseUrl("");
+          return;
+        }
         if (isCustom) {
           setCustomName(String(matched.name ?? persistedCustomName));
-          setBaseUrl(String(matched.baseUrl ?? ""));
         }
+        setBaseUrl(String(matched.baseUrl ?? ""));
         if (typeof matched.temperature === "number") setTemperature(String(matched.temperature));
         if (matched.apiFormat === "chat" || matched.apiFormat === "responses") setApiFormat(matched.apiFormat);
         if (typeof matched.stream === "boolean") setStream(matched.stream);
@@ -129,11 +133,13 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
   // -- Handlers --
   const handleTest = async () => {
     const trimmedKey = apiKey.trim();
+    const trimmedBaseUrl = baseUrl.trim();
+    const shouldUseBaseUrl = isCustom || Boolean(canConfigureBaseUrl && trimmedBaseUrl);
     if (!trimmedKey && !isCustom) {
       setStatus({ state: "error", message: "请先输入 API Key" });
       return;
     }
-    if (isCustom && !baseUrl.trim()) {
+    if (isCustom && !trimmedBaseUrl) {
       setStatus({ state: "error", message: "请先填写 Base URL" });
       return;
     }
@@ -144,16 +150,16 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
         apiKey: trimmedKey,
         apiFormat,
         stream,
-        ...(isCustom ? { baseUrl: baseUrl.trim() } : {}),
+        ...(shouldUseBaseUrl ? { baseUrl: trimmedBaseUrl } : {}),
       });
       if (result.ok) {
         const models = result.models ?? [];
         const verifiedApiFormat = result.detected?.apiFormat ?? apiFormat;
         const verifiedStream = typeof result.detected?.stream === "boolean" ? result.detected.stream : stream;
-        const verifiedBaseUrl = isCustom ? (result.detected?.baseUrl ?? baseUrl.trim()) : "";
+        const verifiedBaseUrl = shouldUseBaseUrl ? (result.detected?.baseUrl ?? trimmedBaseUrl) : "";
         if (result.detected?.apiFormat) setApiFormat(result.detected.apiFormat);
         if (typeof result.detected?.stream === "boolean") setStream(result.detected.stream);
-        if (isCustom && result.detected?.baseUrl) setBaseUrl(result.detected.baseUrl);
+        if (shouldUseBaseUrl && result.detected?.baseUrl) setBaseUrl(result.detected.baseUrl);
         setDetectedModel(result.selectedModel ?? "");
         setDetectedConfig(result.detected ?? null);
         setVerifiedProbe({
@@ -193,8 +199,9 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
 
   const handleSave = async () => {
     const trimmedKey = apiKey.trim();
+    const trimmedBaseUrl = baseUrl.trim();
     setApiKey(trimmedKey);
-    if (isCustom && !baseUrl.trim()) {
+    if (isCustom && !trimmedBaseUrl) {
       setStatus({ state: "error", message: "请先填写 Base URL" });
       return;
     }
@@ -204,6 +211,7 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
         effectiveServiceId,
         serviceId,
         isCustom,
+        baseUrlOverrideEnabled: canConfigureBaseUrl,
         resolvedCustomName,
         apiKey: trimmedKey,
         baseUrl,
@@ -216,7 +224,7 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
       if (result.status.state === "connected") {
         if (result.detectedConfig?.apiFormat) setApiFormat(result.detectedConfig.apiFormat);
         if (typeof result.detectedConfig?.stream === "boolean") setStream(result.detectedConfig.stream);
-        if (isCustom && result.detectedConfig?.baseUrl) setBaseUrl(result.detectedConfig.baseUrl);
+        if (canConfigureBaseUrl && result.detectedConfig?.baseUrl) setBaseUrl(result.detectedConfig.baseUrl);
         setDetectedModel(result.detectedModel);
         setDetectedConfig(result.detectedConfig);
         setStoreModels(effectiveServiceId, result.status.models);
@@ -255,16 +263,24 @@ export function ServiceDetailPage({ serviceId, nav }: { serviceId: string; nav: 
       <ServiceQuickLinks serviceId={serviceId} />
 
       <div className="space-y-5">
-        {/* Custom fields */}
-        {isCustom && (
-        <div className="grid grid-cols-2 gap-4">
+        {/* Service endpoint fields */}
+        {canConfigureBaseUrl && (
+          <div className={isCustom ? "grid grid-cols-2 gap-4" : "grid grid-cols-1 gap-4"}>
+            {isCustom && (
             <Field label="服务名称">
               <input type="text" value={customName} onChange={(e) => setCustomName(e.target.value)}
                 placeholder="例如：本地 Ollama" className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm" />
             </Field>
+            )}
             <Field label="Base URL">
               <input type="text" value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)}
-                placeholder="https://api.example.com/v1" className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm font-mono" />
+                placeholder={isCustom ? "https://api.example.com/v1" : (svc?.baseUrl ?? "留空使用默认 Base URL")}
+                className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 text-sm font-mono" />
+              {!isCustom && (
+                <p className="mt-1 text-[11px] text-muted-foreground/60">
+                  可选：留空使用默认地址，填写后将作为该服务的中转站 / Base URL 覆盖值。
+                </p>
+              )}
             </Field>
           </div>
         )}

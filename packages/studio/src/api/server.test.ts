@@ -913,6 +913,39 @@ describe("createStudioServer daemon lifecycle", () => {
     });
   });
 
+  it("uses configured Base URL overrides when listing built-in service models", async () => {
+    await writeFile(join(root, "inkos.json"), JSON.stringify({
+      ...projectConfig,
+      llm: {
+        service: "kkaiapi",
+        services: [
+          { service: "kkaiapi", baseUrl: "https://relay.example.com/v1", apiFormat: "chat", stream: true },
+        ],
+      },
+    }, null, 2), "utf-8");
+    loadSecretsMock.mockResolvedValue({ services: { kkaiapi: { apiKey: "sk-kkai" } } });
+    listModelsForServiceMock.mockResolvedValueOnce([
+      { id: "gpt-5.5", name: "gpt-5.5", reasoning: false, contextWindow: 1050000 },
+    ]);
+
+    const { createStudioServer } = await import("./server.js");
+    const app = createStudioServer(cloneProjectConfig() as never, root);
+
+    const response = await app.request("http://localhost/api/v1/services/kkaiapi/models?refresh=1");
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      models: [
+        { id: "gpt-5.5", name: "gpt-5.5", contextWindow: 1050000 },
+      ],
+    });
+    expect(listModelsForServiceMock).toHaveBeenCalledWith(
+      "kkaiapi",
+      "sk-kkai",
+      "https://relay.example.com/v1",
+    );
+  });
+
   it("returns Ollama live models without a saved API key", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -1006,6 +1039,7 @@ describe("createStudioServer daemon lifecycle", () => {
       body: JSON.stringify({
         services: {
           moonshot: {
+            baseUrl: "https://relay.example.com/v1",
             temperature: 0.5,
             apiFormat: "responses",
             stream: false,
@@ -1018,7 +1052,7 @@ describe("createStudioServer daemon lifecycle", () => {
 
     const raw = JSON.parse(await readFile(join(root, "inkos.json"), "utf-8"));
     expect(raw.llm.services).toEqual([
-      { service: "moonshot", temperature: 0.5, apiFormat: "responses", stream: false },
+      { service: "moonshot", baseUrl: "https://relay.example.com/v1", temperature: 0.5, apiFormat: "responses", stream: false },
       { service: "custom", name: "内网GPT", baseUrl: "https://llm.internal.corp/v1", temperature: 0.9, apiFormat: "responses", stream: false },
     ]);
   });

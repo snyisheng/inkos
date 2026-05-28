@@ -1,8 +1,8 @@
 /*
-  InkOS Studio — Atmospheric Literary Workbench
-  Fonts: Instrument Serif (Headings/Literary), DM Sans (UI), JetBrains Mono (Data)
+  StoryPilot Studio — AI Novel Command Deck
+  Fonts: Fira Sans (UI), Fira Code (Telemetry), Noto Serif SC (Reading)
 */
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
 
 @import "tailwindcss";
 
@@ -37,94 +37,89 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-serif: 'Instrument Serif', Georgia, serif;
-  --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Noto Serif SC', Georgia, serif;
+  --font-sans: 'Fira Sans', system-ui, sans-serif;
+  --font-mono: 'Fira Code', 'SFMono-Regular', Consolas, monospace;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-soft: 0 2px 15px -3px oklch(0 0 0 / 0.07), 0 4px 6px -4px oklch(0 0 0 / 0.05);
-  --shadow-3d: 0 10px 30px -10px oklch(0 0 0 / 0.15), 0 4px 10px -5px oklch(0 0 0 / 0.1);
-  --shadow-3d-hover: 0 20px 40px -15px oklch(0 0 0 / 0.2), 0 8px 16px -8px oklch(0 0 0 / 0.15);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.08);
+  --shadow-md: 0 12px 28px -22px rgb(15 23 42 / 0.35), 0 2px 8px -6px rgb(15 23 42 / 0.22);
+  --shadow-lg: 0 22px 60px -35px rgb(8 145 178 / 0.45), 0 8px 20px -14px rgb(15 23 42 / 0.35);
+  --shadow-soft: 0 16px 40px -28px oklch(0.45 0.16 220 / 0.28);
+  --shadow-3d: 0 22px 60px -42px oklch(0.62 0.18 210 / 0.45), inset 0 1px 0 oklch(1 0 0 / 0.08);
+  --shadow-3d-hover: 0 26px 80px -42px oklch(0.74 0.18 180 / 0.55), inset 0 1px 0 oklch(1 0 0 / 0.12);
 }
 
-/* ── Light Mode: Warm Parchment & Ink ── */
+/* ── Light Mode: Day Command Deck ── */
 :root {
-  --radius: 0.6rem;
+  --radius: 0.85rem;
 
-  /* Background: Warm, aged paper with subtle radial light */
-  --background: oklch(0.985 0.005 80);
-  --background-radial: radial-gradient(circle at 50% 0%, oklch(0.995 0.002 85) 0%, oklch(0.985 0.005 80) 100%);
-  --foreground: oklch(0.13 0.02 60);
+  --background: oklch(0.965 0.017 240);
+  --background-radial:
+    radial-gradient(circle at 18% -10%, oklch(0.88 0.10 210 / 0.46) 0%, transparent 34%),
+    radial-gradient(circle at 88% 8%, oklch(0.87 0.12 150 / 0.34) 0%, transparent 30%),
+    linear-gradient(135deg, oklch(0.985 0.008 240) 0%, oklch(0.94 0.026 245) 48%, oklch(0.965 0.018 220) 100%);
+  --foreground: oklch(0.18 0.035 245);
 
-  /* Cards: Crisp sheets on paper */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.015 60);
+  --card: oklch(0.995 0.004 230 / 0.84);
+  --card-foreground: oklch(0.18 0.035 245);
 
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.015 60);
+  --popover: oklch(0.99 0.006 235);
+  --popover-foreground: oklch(0.18 0.035 245);
 
-  /* Primary: Deep Oxblood / Ink */
-  --primary: oklch(0.45 0.12 25);
-  --primary-foreground: oklch(0.98 0.006 76);
+  --primary: oklch(0.56 0.16 205);
+  --primary-foreground: oklch(0.99 0.004 210);
 
-  /* Secondary: Soft paper shadow */
-  --secondary: oklch(0.94 0.01 76);
-  --secondary-foreground: oklch(0.25 0.015 60);
+  --secondary: oklch(0.91 0.025 240 / 0.84);
+  --secondary-foreground: oklch(0.24 0.045 245);
 
-  /* Muted: Faded ink */
-  --muted: oklch(0.94 0.008 76);
-  --muted-foreground: oklch(0.38 0.02 60);
+  --muted: oklch(0.91 0.022 240 / 0.72);
+  --muted-foreground: oklch(0.44 0.045 245);
 
-  /* Accent: Subtle gold leaf */
-  --accent: oklch(0.92 0.02 85);
-  --accent-foreground: oklch(0.25 0.05 60);
+  --accent: oklch(0.88 0.09 155 / 0.78);
+  --accent-foreground: oklch(0.22 0.055 170);
 
-  --destructive: oklch(0.55 0.18 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(0.99 0 0);
 
-  --border: oklch(0.84 0.01 76);
-  --input: oklch(0.92 0.005 76);
-  --ring: oklch(0.45 0.12 25);
+  --border: oklch(0.78 0.04 235 / 0.72);
+  --input: oklch(0.92 0.022 235 / 0.72);
+  --ring: oklch(0.62 0.18 205);
 }
 
-/* ── Dark Mode: Obsidian & Candlelight ── */
+/* ── Dark Mode: StoryPilot Night Cockpit ── */
 .dark {
-  /* Background: Deep obsidian with soft top glow */
-  --background: oklch(0.12 0.01 250);
-  --background-radial: radial-gradient(circle at 50% 0%, oklch(0.16 0.015 250) 0%, oklch(0.12 0.01 250) 100%);
-  --foreground: oklch(0.97 0.005 250);
+  --background: oklch(0.105 0.032 250);
+  --background-radial:
+    radial-gradient(circle at 18% -6%, oklch(0.38 0.14 230 / 0.34) 0%, transparent 32%),
+    radial-gradient(circle at 90% 2%, oklch(0.62 0.19 160 / 0.18) 0%, transparent 30%),
+    radial-gradient(circle at 54% 118%, oklch(0.47 0.16 285 / 0.16) 0%, transparent 42%),
+    linear-gradient(135deg, oklch(0.09 0.03 250) 0%, oklch(0.12 0.04 250) 52%, oklch(0.095 0.03 260) 100%);
+  --foreground: oklch(0.96 0.011 230);
 
-  /* Cards: Floating graphite */
-  --card: oklch(0.18 0.015 250);
-  --card-foreground: oklch(0.95 0.005 250);
+  --card: oklch(0.18 0.035 248 / 0.72);
+  --card-foreground: oklch(0.96 0.011 230);
 
-  --popover: oklch(0.18 0.015 250);
-  --popover-foreground: oklch(0.95 0.005 250);
+  --popover: oklch(0.16 0.035 248 / 0.96);
+  --popover-foreground: oklch(0.96 0.011 230);
 
-  /* Primary: Warm Amber / Candlelight */
-  --primary: oklch(0.78 0.14 85);
-  --primary-foreground: oklch(0.12 0.01 250);
+  --primary: oklch(0.74 0.17 185);
+  --primary-foreground: oklch(0.09 0.03 250);
 
-  /* Secondary: Dark slate */
-  --secondary: oklch(0.22 0.02 250);
-  --secondary-foreground: oklch(0.92 0.005 250);
+  --secondary: oklch(0.24 0.04 248 / 0.78);
+  --secondary-foreground: oklch(0.92 0.016 230);
 
-  /* Muted: Dimmed graphite */
-  --muted: oklch(0.22 0.015 250);
-  --muted-foreground: oklch(0.78 0.005 250);
+  --muted: oklch(0.22 0.035 248 / 0.72);
+  --muted-foreground: oklch(0.72 0.035 232);
 
-  /* Accent: Muted gold */
-  --accent: oklch(0.28 0.04 85);
-  --accent-foreground: oklch(0.95 0.06 85);
+  --accent: oklch(0.36 0.10 160 / 0.78);
+  --accent-foreground: oklch(0.91 0.11 160);
 
-  --destructive: oklch(0.55 0.2 25);
+  --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.30 0.02 250);
-  --input: oklch(0.25 0.02 250);
-  --ring: oklch(0.78 0.14 85);
+  --border: oklch(0.34 0.05 242 / 0.72);
+  --input: oklch(0.21 0.04 248 / 0.72);
+  --ring: oklch(0.74 0.17 185);
 }
 
 body {
@@ -152,26 +147,42 @@ button:not(:disabled):active {
   transition: transform 0.1s ease;
 }
 
-/* Subtle grain texture for physical feel */
+/* Tactical grid + scanner texture for the command deck */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 50;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.18;
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--primary) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--primary) 14%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 50% 0%, color-mix(in oklch, var(--primary) 16%, transparent), transparent 42%);
+  background-size: 52px 52px, 52px 52px, 100% 100%;
+  mask-image: linear-gradient(to bottom, black 0%, black 58%, transparent 100%);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 51;
+  opacity: 0.055;
+  background-image: linear-gradient(to bottom, transparent 50%, color-mix(in oklch, var(--foreground) 18%, transparent) 50%);
+  background-size: 100% 4px;
   mix-blend-mode: overlay;
 }
 
-/* Serif headings with literary character */
+/* Command-deck headings: precise UI, literary serif remains for manuscript bodies */
 h1, h2, h3, h4 {
-  font-family: var(--font-serif);
-  letter-spacing: -0.02em;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  letter-spacing: -0.025em;
+  font-weight: 650;
 }
 
-h1 { font-size: 2.25rem; font-style: italic; }
+h1 { font-size: 2.25rem; }
 h2 { font-size: 1.75rem; }
 h3 { font-size: 1.25rem; }
 
@@ -216,25 +227,48 @@ h3 { font-size: 1.25rem; }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Premium Layout Utilities ── */
+/* ── StoryPilot Layout Utilities ── */
 .glass-panel {
-  backdrop-blur: 16px;
-  background-color: color-mix(in oklch, var(--card) 70%, transparent);
-  border: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+  backdrop-filter: blur(18px) saturate(135%);
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--card) 86%, transparent), color-mix(in oklch, var(--secondary) 46%, transparent));
+  border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
   box-shadow: var(--shadow-3d);
 }
 
 .paper-sheet {
-  background-color: var(--card);
-  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--card) 92%, transparent), color-mix(in oklch, var(--secondary) 40%, transparent));
+  border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
   box-shadow: var(--shadow-md);
   transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+              border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.paper-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, color-mix(in oklch, var(--primary) 22%, transparent), transparent 34%),
+    radial-gradient(circle at 94% 0%, color-mix(in oklch, var(--accent) 28%, transparent), transparent 28%);
+  opacity: 0.16;
 }
 
 .paper-sheet:hover {
+  transform: translateY(-2px);
   box-shadow: var(--shadow-3d-hover);
-  border-color: var(--primary);
+  border-color: color-mix(in oklch, var(--primary) 58%, var(--border));
+}
+
+.command-chip {
+  border: 1px solid color-mix(in oklch, var(--border) 75%, transparent);
+  background: color-mix(in oklch, var(--secondary) 62%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 8%, transparent);
 }
 
 /* ── ChatPanel Animations ── */
@@ -242,7 +276,7 @@ h3 { font-size: 1.25rem; }
 /* Header sparkle glow pulse */
 @keyframes iconGlow {
   0%, 100% { filter: drop-shadow(0 0 0px transparent); }
-  50% { filter: drop-shadow(0 0 6px oklch(0.78 0.14 85 / 0.4)); }
+  50% { filter: drop-shadow(0 0 8px color-mix(in oklch, var(--primary) 58%, transparent)); }
 }
 .chat-icon-glow { animation: iconGlow 2s ease-in-out infinite; }
 
@@ -292,8 +326,8 @@ h3 { font-size: 1.25rem; }
 
 /* Thinking breathing glow */
 @keyframes thinkGlow {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.78 0.14 85 / 0); }
-  50% { box-shadow: 0 0 12px 2px oklch(0.78 0.14 85 / 0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 0%, transparent); }
+  50% { box-shadow: 0 0 14px 2px color-mix(in oklch, var(--primary) 22%, transparent); }
 }
 .chat-thinking-glow { animation: thinkGlow 2s ease-in-out infinite; }
 

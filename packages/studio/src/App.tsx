@@ -24,8 +24,7 @@ import { useSessionEvents } from "./hooks/use-session-events";
 import { useTheme } from "./hooks/use-theme";
 import { useI18n } from "./hooks/use-i18n";
 import { postApi, putApi, useApi } from "./hooks/use-api";
-import { Sun, Moon } from "lucide-react";
-import { House } from "lucide-react";
+import { AlertCircle, House, Moon, RefreshCw, Sun } from "lucide-react";
 
 export type { HashRoute as Route } from "./hooks/use-hash-route";
 
@@ -43,9 +42,13 @@ export function App() {
   const sse = useSSE();
   const { theme, setTheme } = useTheme();
   const { t, lang: currentLang } = useI18n();
-  const { data: project, refetch: refetchProject } = useApi<{ language: string; languageExplicit: boolean }>("/project");
+  const {
+    data: project,
+    loading: projectLoading,
+    error: projectError,
+    refetch: refetchProject,
+  } = useApi<{ language: string; languageExplicit: boolean }>("/project");
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
-  const [ready, setReady] = useState(false);
 
   const isDark = theme === "dark";
 
@@ -54,11 +57,9 @@ export function App() {
   }, [isDark]);
 
   useEffect(() => {
-    if (project) {
-      if (!project.languageExplicit) {
-        setShowLanguageSelector(true);
-      }
-      setReady(true);
+    if (!project) return;
+    if (!project.languageExplicit) {
+      setShowLanguageSelector(true);
     }
   }, [project]);
 
@@ -93,10 +94,35 @@ export function App() {
         ? "services"
         : route.page;
 
-  if (!ready) {
+  if (projectLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 text-foreground">
         <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Loading StoryPilot deck</div>
+      </div>
+    );
+  }
+
+  if (projectError || !project) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+        <div className="glass-panel max-w-md rounded-3xl p-8 text-center">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive">
+            <AlertCircle size={24} />
+          </div>
+          <h1 className="mb-2 text-xl font-bold">StoryPilot Studio 启动失败</h1>
+          <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+            {projectError ?? "未能读取项目配置。请确认 Studio 后端已启动，并且当前目录是有效项目。"}
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetchProject()}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+          >
+            <RefreshCw size={15} />
+            重试连接
+          </button>
+        </div>
       </div>
     );
   }
@@ -119,18 +145,19 @@ export function App() {
       <Sidebar nav={nav} activePage={activePage} sse={sse} t={t} />
 
       {/* Center Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-background/30 backdrop-blur-sm">
+      <div className="flex-1 flex flex-col min-w-0 bg-background/35 backdrop-blur-sm">
         {/* Header Strip */}
-        <header className="h-14 shrink-0 flex items-center justify-between px-8 border-b border-border/40">
+        <header className="h-14 shrink-0 flex items-center justify-between px-8 border-b border-border/50 bg-background/45 backdrop-blur-xl">
           <div className="flex items-center gap-2">
              <button
                onClick={nav.toDashboard}
-               className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-secondary/50 transition-colors"
+               className="inline-flex items-center gap-2 rounded-xl border border-border/60 bg-card/75 px-3 py-1.5 text-sm font-semibold text-foreground shadow-sm shadow-primary/5 backdrop-blur hover:border-primary/50 hover:bg-secondary/60 transition-colors"
              >
                <House size={14} />
-               <span>首页</span>
+               <span>{t("bread.home")}</span>
                <span className="text-muted-foreground/70">/</span>
-               <span className="font-serif">InkOS Studio</span>
+               <span className="font-mono uppercase tracking-[0.18em] text-primary">StoryPilot</span>
+               <span className="hidden sm:inline text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Command Deck</span>
              </button>
           </div>
 

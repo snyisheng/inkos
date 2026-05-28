@@ -11,9 +11,9 @@ const strings = {
   "nav.disconnected": { zh: "未连接", en: "Disconnected" },
 
   // Dashboard
-  "dash.title": { zh: "书籍列表", en: "Books" },
-  "dash.noBooks": { zh: "还没有书", en: "No books yet" },
-  "dash.createFirst": { zh: "创建第一本书开始写作", en: "Create your first book to get started" },
+  "dash.title": { zh: "创作驾驶舱", en: "Command Deck" },
+  "dash.noBooks": { zh: "驾驶舱等待第一项任务", en: "Command deck standing by" },
+  "dash.createFirst": { zh: "创建第一本书，StoryPilot 会接管规划、写作、审稿和修订链路。", en: "Create your first book and StoryPilot will run the plan-write-audit-revise loop." },
   "dash.writeNext": { zh: "写下一章", en: "Write Next" },
   "dash.writing": { zh: "写作中...", en: "Writing..." },
   "dash.stats": { zh: "统计", en: "Stats" },
@@ -83,7 +83,7 @@ const strings = {
   "nav.agentOnline": { zh: "代理在线", en: "Agent Online" },
   "nav.agentOffline": { zh: "代理离线", en: "Agent Offline" },
   "nav.tools": { zh: "工具", en: "Tools" },
-  "nav.chat": { zh: "普通聊天", en: "Chat" },
+  "nav.chat": { zh: "驾驶舱聊天", en: "Deck Chat" },
   "nav.style": { zh: "文风", en: "Style" },
   "nav.import": { zh: "导入", en: "Import" },
   "nav.radar": { zh: "市场雷达", en: "Radar" },
@@ -221,7 +221,7 @@ const strings = {
   "truth.selectHint": { zh: "选择文件查看内容", en: "Select a file to view" },
 
   // Dashboard
-  "dash.subtitle": { zh: "管理你的文学宇宙和 AI 辅助草稿。", en: "Manage your literary universe and AI-assisted drafts." },
+  "dash.subtitle": { zh: "总览小说项目、Agent 状态与下一步写作航线。", en: "Track books, agent status, and the next writing vector." },
 
   // Chapter Reader extras
   "reader.openingManuscript": { zh: "打开书稿中...", en: "Opening manuscript..." },
