@@ -39,6 +39,9 @@ const strings = {
   "reader.characters": { zh: "字符", en: "characters" },
   "reader.edit": { zh: "编辑", en: "Edit" },
   "reader.preview": { zh: "预览", en: "Preview" },
+  "reader.copyChapter": { zh: "复制本章", en: "Copy Chapter" },
+  "reader.copied": { zh: "已复制", en: "Copied" },
+  "reader.copyFailed": { zh: "复制失败", en: "Copy Failed" },
 
   // Book Create
   "create.title": { zh: "创建书籍", en: "Create Book" },

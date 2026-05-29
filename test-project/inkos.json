@@ -17,15 +17,25 @@
         "temperature": 0.7,
         "apiFormat": "chat",
         "stream": true
+      },
+      {
+        "service": "localCodexMcp",
+        "temperature": 0.7,
+        "apiFormat": "chat",
+        "stream": false
       }
     ],
-    "defaultModel": "codex-auto-review",
-    "service": "codexForMeCodingPlan",
+    "defaultModel": "local-codex",
+    "service": "localCodexMcp",
     "provider": "openai",
-    "baseUrl": "https://w.ciykj.cn/v1",
-    "model": "codex-auto-review",
+    "baseUrl": "http://localhost/codex-mcp",
+    "model": "local-codex",
+    "cover": {
+      "service": "localCodexImagegen",
+      "model": "local-codex"
+    },
     "temperature": 0.7,
     "apiFormat": "chat",
-    "stream": true
+    "stream": false
   }
 }

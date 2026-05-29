@@ -25,6 +25,7 @@ import {
 import { coverSecretKey, resolveCoverProviderPreset, type CoverProviderPreset } from "../llm/cover-providers.js";
 import { loadSecrets } from "../llm/secrets.js";
 import { safeChildPath } from "../utils/path-safety.js";
+import { generateLocalCodexCover } from "./local-codex-cover.js";
 
 export interface ShortFictionRunRuntimes {
   readonly planner: AgentContext;
@@ -338,6 +339,16 @@ async function generateCoverImageArtifact(input: {
   });
   const size = input.coverSize || process.env.INKOS_COVER_SIZE || "1024x1360";
 
+  if (request.api === "local-codex-imagegen") {
+    return generateLocalCodexCover({
+      root: input.root,
+      outputDir: input.outputDir,
+      imagePrompt: buildCoverImagePrompt(input.salesPackage),
+      model: request.model,
+      size,
+    });
+  }
+
   if (request.api === "gemini") {
     const prompt = buildCoverImagePrompt(input.salesPackage);
     const payload = await generateGeminiCover(request, prompt);
@@ -355,11 +366,12 @@ async function generateCoverImageArtifact(input: {
   }
 
   const endpoint = request.endpoint ?? `${request.baseUrl.replace(/\/+$/u, "")}/responses`;
+  const apiKey = coverRequestApiKey(request);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${request.apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: request.model,
@@ -394,7 +406,7 @@ export interface ShortFictionCoverRequest {
   readonly baseUrl: string;
   readonly endpoint?: string;
   readonly model: string;
-  readonly apiKey: string;
+  readonly apiKey?: string;
 }
 
 export async function resolveCoverGenerationRequest(input: {
@@ -418,7 +430,8 @@ export async function resolveCoverGenerationRequest(input: {
     };
   }
 
-  const projectCover = await readProjectCoverConfig(input.root);
+  const projectCover = await readProjectCoverConfig(input.root)
+    ?? await readImplicitLocalCodexCoverConfig(input.root);
   if (!projectCover) {
     throw new Error("cover endpoint is required. Configure cover generation in Studio or set INKOS_COVER_BASE_URL.");
   }
@@ -426,6 +439,13 @@ export async function resolveCoverGenerationRequest(input: {
   const preset = resolveCoverProviderPreset(projectCover.service);
   if (!preset) {
     throw new Error(`Unsupported cover service: ${projectCover.service}`);
+  }
+  if (preset.api === "local-codex-imagegen") {
+    return {
+      api: preset.api,
+      baseUrl: preset.baseUrl,
+      model: input.coverModel || projectCover.model || preset.defaultModel,
+    };
   }
   const apiKey = await resolveProjectCoverApiKey(input.root, projectCover.service);
   if (!apiKey) {
@@ -457,6 +477,25 @@ async function readProjectCoverConfig(root: string): Promise<{ readonly service:
   }
 }
 
+async function readImplicitLocalCodexCoverConfig(root: string): Promise<{ readonly service: string; readonly model?: string } | undefined> {
+  try {
+    const raw = await readFile(join(root, "inkos.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { llm?: { service?: unknown; model?: unknown; defaultModel?: unknown } };
+    const service = typeof parsed.llm?.service === "string" ? parsed.llm.service : "";
+    const model = typeof parsed.llm?.model === "string" ? parsed.llm.model : "";
+    const defaultModel = typeof parsed.llm?.defaultModel === "string" ? parsed.llm.defaultModel : "";
+    if (service !== "localCodexMcp" && model !== "local-codex" && defaultModel !== "local-codex") {
+      return undefined;
+    }
+    return {
+      service: "localCodexImagegen",
+      model: "local-codex",
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 async function resolveProjectCoverApiKey(root: string, service: string): Promise<string> {
   const secrets = await loadSecrets(root);
   return secrets.services[coverSecretKey(service)]?.apiKey
@@ -471,11 +510,12 @@ async function generateImagesCover(
   size: string,
 ): Promise<{ readonly buffer: Buffer; readonly extension: "png" | "jpg" }> {
   const endpoint = request.endpoint ?? `${request.baseUrl.replace(/\/+$/u, "")}/images/generations`;
+  const apiKey = coverRequestApiKey(request);
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${request.apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: request.model,
@@ -504,7 +544,7 @@ async function generateImagesCover(
     };
   }
   if (image?.url) {
-    return downloadGeneratedCoverImage(image.url, request.apiKey);
+    return downloadGeneratedCoverImage(image.url, apiKey);
   }
   throw new Error("cover generation response did not include image URL or base64 data.");
 }
@@ -558,7 +598,7 @@ async function generateGeminiCover(
   request: ShortFictionCoverRequest,
   prompt: string,
 ): Promise<{ readonly base64: string; readonly extension: "png" | "jpg" }> {
-  const endpoint = `${request.baseUrl.replace(/\/+$/u, "")}/models/${encodeURIComponent(request.model)}:generateContent?key=${encodeURIComponent(request.apiKey)}`;
+  const endpoint = `${request.baseUrl.replace(/\/+$/u, "")}/models/${encodeURIComponent(request.model)}:generateContent?key=${encodeURIComponent(coverRequestApiKey(request))}`;
   const response = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -584,6 +624,13 @@ async function generateGeminiCover(
     throw new Error("cover generation response did not include Gemini inline image data.");
   }
   return image;
+}
+
+function coverRequestApiKey(request: ShortFictionCoverRequest): string {
+  if (!request.apiKey) {
+    throw new Error("Cover API key is required for this cover provider.");
+  }
+  return request.apiKey;
 }
 
 export function extractResponsesImageBase64(payload: unknown): string | undefined {

@@ -1,12 +1,13 @@
-export type CoverProviderId = "kkaiapi" | "openai" | "google";
+export type CoverProviderId = "kkaiapi" | "openai" | "google" | "localCodexImagegen";
 
 export interface CoverProviderPreset {
   readonly service: CoverProviderId;
   readonly label: string;
   readonly baseUrl: string;
-  readonly api: "responses" | "images" | "gemini";
+  readonly api: "responses" | "images" | "gemini" | "local-codex-imagegen";
   readonly defaultModel: string;
   readonly models: readonly string[];
+  readonly requiresApiKey?: boolean;
 }
 
 export const COVER_PROVIDER_PRESETS: readonly CoverProviderPreset[] = [
@@ -33,6 +34,15 @@ export const COVER_PROVIDER_PRESETS: readonly CoverProviderPreset[] = [
     api: "gemini",
     defaultModel: "gemini-3.1-flash-image-preview",
     models: ["gemini-3.1-flash-image-preview", "gemini-2.5-flash-image"],
+  },
+  {
+    service: "localCodexImagegen",
+    label: "本地 Codex 图片生成",
+    baseUrl: "local://codex-imagegen",
+    api: "local-codex-imagegen",
+    defaultModel: "local-codex",
+    models: ["local-codex"],
+    requiresApiKey: false,
   },
 ];
 
