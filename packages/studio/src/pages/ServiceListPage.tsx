@@ -57,6 +57,7 @@ interface CoverProviderInfo {
   readonly defaultModel: string;
   readonly models: readonly string[];
   readonly connected: boolean;
+  readonly requiresApiKey?: boolean;
 }
 
 interface CoverConfigPayload {
@@ -75,6 +76,7 @@ function CoverConfigCard() {
   const [message, setMessage] = useState("");
 
   const selected = providers.find((provider) => provider.service === service);
+  const selectedRequiresApiKey = selected?.requiresApiKey !== false;
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +100,11 @@ function CoverConfigCard() {
 
   useEffect(() => {
     if (!service) return;
+    const provider = providers.find((item) => item.service === service);
+    if (provider?.requiresApiKey === false) {
+      setApiKey("");
+      return;
+    }
     let cancelled = false;
     void fetchJson<{ apiKey?: string }>(`/cover/secret/${encodeURIComponent(service)}`)
       .then((payload) => {
@@ -108,7 +115,7 @@ function CoverConfigCard() {
         if (!cancelled) setApiKey("");
       });
     return () => { cancelled = true; };
-  }, [service]);
+  }, [providers, service]);
 
   const handleServiceChange = (nextService: string) => {
     const provider = providers.find((item) => item.service === nextService);
@@ -124,11 +131,13 @@ function CoverConfigCard() {
     setStatus("saving");
     setMessage("");
     try {
-      await fetchJson(`/cover/secret/${encodeURIComponent(provider.service)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apiKey: apiKey.trim() }),
-      });
+      if (provider.requiresApiKey !== false) {
+        await fetchJson(`/cover/secret/${encodeURIComponent(provider.service)}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ apiKey: apiKey.trim() }),
+        });
+      }
       await fetchJson("/cover/config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -155,7 +164,7 @@ function CoverConfigCard() {
         </div>
         {selected?.connected && (
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500">
-            已有密钥
+            {selectedRequiresApiKey ? "已有密钥" : "本地可用"}
           </span>
         )}
       </div>
@@ -189,22 +198,28 @@ function CoverConfigCard() {
 
       <label className="space-y-1.5">
         <span className="block text-xs font-medium text-muted-foreground/70">API Key</span>
-        <div className="relative">
-          <input
-            type={showKey ? "text" : "password"}
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-            placeholder="sk-..."
-            className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 pr-10 text-sm font-mono"
-          />
-          <button
-            type="button"
-            onClick={() => setShowKey((value) => !value)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground"
-          >
-            {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-        </div>
+        {selectedRequiresApiKey ? (
+          <div className="relative">
+            <input
+              type={showKey ? "text" : "password"}
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+              placeholder="sk-..."
+              className="w-full rounded-lg border border-border/60 bg-background px-3 py-2 pr-10 text-sm font-mono"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey((value) => !value)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-muted-foreground"
+            >
+              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2 text-xs text-muted-foreground">
+            本地 Codex 图片生成不需要 API Key，但需要本机 Codex MCP 能写出真实 PNG/JPEG/WebP 文件。
+          </div>
+        )}
       </label>
 
       <div className="flex flex-wrap items-center gap-3">

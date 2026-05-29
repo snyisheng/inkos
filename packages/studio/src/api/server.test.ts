@@ -1996,6 +1996,39 @@ describe("createStudioServer daemon lifecycle", () => {
     });
   });
 
+  it("saves local Codex cover generation config without requiring a cover API key", async () => {
+    loadSecretsMock.mockResolvedValue({ services: {} });
+
+    const { createStudioServer } = await import("./server.js");
+    const app = createStudioServer(cloneProjectConfig() as never, root);
+
+    const saveConfig = await app.request("http://localhost/api/v1/cover/config", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        service: "localCodexImagegen",
+        model: "local-codex",
+      }),
+    });
+    expect(saveConfig.status).toBe(200);
+
+    const raw = JSON.parse(await readFile(join(root, "inkos.json"), "utf-8"));
+    expect(raw.llm.cover).toEqual({
+      service: "localCodexImagegen",
+      model: "local-codex",
+    });
+
+    const config = await app.request("http://localhost/api/v1/cover/config");
+    expect(config.status).toBe(200);
+    const payload = await config.json() as { providers: Array<{ service: string; connected: boolean; requiresApiKey: boolean }> };
+    expect(payload.providers).toContainEqual(expect.objectContaining({
+      service: "localCodexImagegen",
+      connected: true,
+      requiresApiKey: false,
+    }));
+    expect(saveSecretsMock).not.toHaveBeenCalled();
+  });
+
   it("serves generated project cover images without exposing arbitrary files", async () => {
     const { createStudioServer } = await import("./server.js");
     const app = createStudioServer(cloneProjectConfig() as never, root);

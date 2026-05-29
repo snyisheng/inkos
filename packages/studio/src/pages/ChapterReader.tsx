@@ -1,12 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fetchJson, useApi, postApi } from "../hooks/use-api";
 import type { Theme } from "../hooks/use-theme";
 import type { TFunction } from "../hooks/use-i18n";
 import { useColors } from "../hooks/use-colors";
 import {
-  ChevronLeft,
-  Check,
-  X,
   List,
   RotateCcw,
   BookOpen,
@@ -18,6 +15,7 @@ import {
   Pencil,
   Save,
   Eye,
+  Copy,
 } from "lucide-react";
 
 interface ChapterData {
@@ -45,6 +43,14 @@ export function ChapterReader({ bookId, chapterNumber, nav, theme, t }: {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState("");
   const [saving, setSaving] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const copyResetRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => {
+    if (copyResetRef.current !== undefined) {
+      window.clearTimeout(copyResetRef.current);
+    }
+  }, []);
 
   const handleStartEdit = () => {
     if (!data) return;
@@ -71,6 +77,28 @@ export function ChapterReader({ bookId, chapterNumber, nav, theme, t }: {
       alert(e instanceof Error ? e.message : "Save failed");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const resetCopyStatusSoon = () => {
+    if (copyResetRef.current !== undefined) {
+      window.clearTimeout(copyResetRef.current);
+    }
+    copyResetRef.current = window.setTimeout(() => {
+      setCopyStatus("idle");
+      copyResetRef.current = undefined;
+    }, 2000);
+  };
+
+  const handleCopyChapter = async () => {
+    if (!data) return;
+    try {
+      await copyTextToClipboard(editing ? editContent : data.content);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("failed");
+    } finally {
+      resetCopyStatusSoon();
     }
   };
 
@@ -145,6 +173,19 @@ export function ChapterReader({ bookId, chapterNumber, nav, theme, t }: {
           >
             <List size={14} />
             {t("reader.backToList")}
+          </button>
+
+          <button
+            onClick={handleCopyChapter}
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold bg-secondary text-muted-foreground rounded-xl hover:text-primary hover:bg-primary/10 transition-all border border-border/50"
+            title={t("reader.copyChapter")}
+          >
+            {copyStatus === "copied" ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+            {copyStatus === "copied"
+              ? t("reader.copied")
+              : copyStatus === "failed"
+                ? t("reader.copyFailed")
+                : t("reader.copyChapter")}
           </button>
 
           {/* Edit / Preview toggle */}
@@ -263,4 +304,28 @@ export function ChapterReader({ bookId, chapterNumber, nav, theme, t }: {
       </div>
     </div>
   );
+}
+
+async function copyTextToClipboard(text: string): Promise<void> {
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  if (typeof document === "undefined") {
+    throw new Error("Clipboard API not available");
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  document.body.removeChild(textarea);
+  if (!copied) {
+    throw new Error("Copy command failed");
+  }
 }

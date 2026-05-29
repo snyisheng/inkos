@@ -1823,7 +1823,9 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string) {
         baseUrl: provider.baseUrl,
         defaultModel: provider.defaultModel,
         models: provider.models,
-        connected: Boolean(secrets.services[coverSecretKey(provider.service)]?.apiKey || secrets.services[provider.service]?.apiKey),
+        requiresApiKey: provider.requiresApiKey !== false,
+        connected: provider.requiresApiKey === false
+          || Boolean(secrets.services[coverSecretKey(provider.service)]?.apiKey || secrets.services[provider.service]?.apiKey),
       })),
     });
   });

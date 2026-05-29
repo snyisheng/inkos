@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { LLMClient } from "../llm/provider.js";
 import {
   ShortFictionDraftReviserAgent,
@@ -16,7 +16,20 @@ import {
   resolveCoverGenerationRequest,
 } from "../pipeline/short-fiction-runner.js";
 
+const { runLocalCodexMcpCompletionMock } = vi.hoisted(() => ({
+  runLocalCodexMcpCompletionMock: vi.fn(),
+}));
+
+vi.mock("../llm/local-codex-mcp.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../llm/local-codex-mcp.js")>();
+  return {
+    ...actual,
+    runLocalCodexMcpCompletion: runLocalCodexMcpCompletionMock,
+  };
+});
+
 const ZERO_USAGE = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 function fakeClient(): LLMClient {
   return {
@@ -170,6 +183,61 @@ describe("public short-fiction chain", () => {
     }
   });
 
+  it("falls back to local Codex cover generation when the active LLM service is local Codex MCP", async () => {
+    const root = await mkdtemp(join(tmpdir(), "inkos-implicit-local-codex-cover-"));
+    try {
+      await writeFile(join(root, "inkos.json"), JSON.stringify({
+        name: "cover-test",
+        version: "0.1.0",
+        language: "zh",
+        llm: {
+          provider: "openai",
+          service: "localCodexMcp",
+          configSource: "studio",
+          baseUrl: "http://localhost/codex-mcp",
+          apiKey: "",
+          model: "local-codex",
+          defaultModel: "local-codex",
+        },
+        notify: [],
+      }, null, 2), "utf-8");
+
+      await expect(resolveCoverGenerationRequest({ root })).resolves.toMatchObject({
+        api: "local-codex-imagegen",
+        baseUrl: "local://codex-imagegen",
+        model: "local-codex",
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves local Codex cover generation without a stored cover secret", async () => {
+    const root = await mkdtemp(join(tmpdir(), "inkos-local-codex-cover-"));
+    try {
+      await writeFile(join(root, "inkos.json"), JSON.stringify({
+        name: "cover-test",
+        version: "0.1.0",
+        language: "zh",
+        llm: {
+          cover: {
+            service: "localCodexImagegen",
+            model: "local-codex",
+          },
+        },
+        notify: [],
+      }, null, 2), "utf-8");
+
+      await expect(resolveCoverGenerationRequest({ root })).resolves.toMatchObject({
+        api: "local-codex-imagegen",
+        baseUrl: "local://codex-imagegen",
+        model: "local-codex",
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("extracts OpenAI-compatible image generation URLs and base64 payloads", () => {
     expect(extractImagesGenerationImage({
       data: [{ url: "https://api.kkaiapi.com/files/img_abc123.png" }],
@@ -236,6 +304,52 @@ describe("public short-fiction chain", () => {
       globalThis.fetch = originalFetch;
       delete process.env.INKOS_TEST_COVER_KEY;
       await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("generates a standalone cover through local Codex MCP when configured as cover provider", async () => {
+    const root = await mkdtemp(join(tmpdir(), "inkos-local-cover-tool-"));
+    runLocalCodexMcpCompletionMock.mockReset();
+    runLocalCodexMcpCompletionMock.mockImplementationOnce(async (args: { cwd?: string; promptOverride?: string; sandbox?: string }) => {
+      const targetPath = args.promptOverride?.match(/目标文件：(.+)/u)?.[1]?.trim() ?? "covers/local/cover.png";
+      const absoluteTarget = join(args.cwd ?? root, targetPath);
+      await mkdir(dirname(absoluteTarget), { recursive: true });
+      await writeFile(absoluteTarget, PNG_SIGNATURE);
+      return { content: JSON.stringify({ path: targetPath }) };
+    });
+
+    try {
+      await writeFile(join(root, "inkos.json"), JSON.stringify({
+        name: "cover-test",
+        version: "0.1.0",
+        language: "zh",
+        llm: {
+          cover: {
+            service: "localCodexImagegen",
+            model: "local-codex",
+          },
+        },
+        notify: [],
+      }, null, 2), "utf-8");
+
+      const result = await generateShortFictionCover({
+        projectRoot: root,
+        title: "山海夜航",
+        intro: "少年在风暴夜发现沉船里的古代密令。",
+        sellingPoints: ["奇幻冒险", "强悬念"],
+        coverPrompt: "深蓝海面，少年举灯，远处巨兽阴影。",
+        outputDir: "covers/local",
+      });
+
+      expect(result.coverImagePath).toBe("covers/local/cover.png");
+      await expect(readFile(join(root, "covers", "local", "cover.png"))).resolves.toEqual(PNG_SIGNATURE);
+      expect(runLocalCodexMcpCompletionMock).toHaveBeenCalledWith(expect.objectContaining({
+        cwd: root,
+        sandbox: "workspace-write",
+      }));
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      runLocalCodexMcpCompletionMock.mockReset();
     }
   });
 });

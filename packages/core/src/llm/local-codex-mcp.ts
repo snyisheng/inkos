@@ -30,6 +30,7 @@ interface LocalCodexCompletionArgs {
   readonly promptOverride?: string;
   readonly model?: string;
   readonly cwd?: string;
+  readonly sandbox?: "read-only" | "workspace-write" | "danger-full-access";
   readonly timeoutMs?: number;
   readonly deps?: LocalCodexMcpDeps;
 }
@@ -121,7 +122,7 @@ export async function runLocalCodexMcpCompletion(args: LocalCodexCompletionArgs)
         prompt: args.promptOverride ?? buildLocalCodexPrompt(args.messages),
         cwd: resolveCodexCwd(args.cwd ?? args.deps?.cwd),
         "approval-policy": "never",
-        sandbox: "read-only",
+        sandbox: args.sandbox ?? "read-only",
         ...(args.model && args.model !== LOCAL_CODEX_MCP_MODEL_ID ? { model: args.model } : {}),
       },
       timeoutMs,
