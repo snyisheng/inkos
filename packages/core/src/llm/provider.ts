@@ -19,6 +19,8 @@ import { getEndpoint } from "./providers/index.js";
 import { lookupModel } from "./providers/lookup.js";
 import { fetchWithProxy } from "../utils/proxy-fetch.js";
 import { isApiKeyOptionalForEndpoint } from "../utils/llm-endpoint-auth.js";
+import { isLocalCodexMcpService, runLocalCodexMcpCompletion } from "./local-codex-mcp.js";
+import { buildLocalCodexToolProtocolPrompt, parseLocalCodexToolProtocolResponse } from "./local-codex-agent-stream.js";
 
 
 // === Streaming Monitor Types ===
@@ -1028,6 +1030,14 @@ export async function chatCompletion(
   try {
     return await withTransientLLMRetry(
       async () => {
+        if (isLocalCodexMcpService(client.service)) {
+          const result = await runLocalCodexMcpCompletion({ messages, model });
+          onTextDelta?.(result.content);
+          return {
+            content: result.content,
+            usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+          };
+        }
         if (shouldUseNativeCustomTransport(client)) {
           return chatCompletionViaCustomOpenAICompatible(client, model, messages, resolved, onStreamProgress, onTextDelta);
         }
@@ -1062,6 +1072,9 @@ export async function chatWithTools(
 ): Promise<ChatWithToolsResult> {
   const errorCtx = { baseUrl: client._piModel?.baseUrl ?? "(unknown)", model, service: client.service };
   try {
+    if (isLocalCodexMcpService(client.service)) {
+      return await chatWithToolsViaLocalCodexMcp(model, messages, tools);
+    }
     const resolved = {
       temperature: clampTemperatureForModel(
         client.service,
@@ -1074,6 +1087,36 @@ export async function chatWithTools(
   } catch (error) {
     throw wrapLLMError(error, errorCtx);
   }
+}
+
+
+async function chatWithToolsViaLocalCodexMcp(
+  model: string,
+  messages: ReadonlyArray<AgentMessage>,
+  tools: ReadonlyArray<ToolDefinition>,
+): Promise<ChatWithToolsResult> {
+  const context = agentMessagesToPiContext(messages);
+  context.tools = toPiTools(tools);
+  const prompt = buildLocalCodexToolProtocolPrompt(context);
+  const result = await runLocalCodexMcpCompletion({
+    messages: [],
+    promptOverride: prompt,
+    model,
+  });
+  const parsed = parseLocalCodexToolProtocolResponse(result.content);
+
+  if (parsed.kind === "tool_calls") {
+    return {
+      content: parsed.content ?? "",
+      toolCalls: parsed.calls.map((call, index) => ({
+        id: call.id?.trim() || `local_codex_tool_${Date.now().toString(36)}_${index}`,
+        name: call.name,
+        arguments: JSON.stringify(call.arguments),
+      })),
+    };
+  }
+
+  return { content: parsed.content, toolCalls: [] };
 }
 
 // === pi-ai Unified Implementation ===

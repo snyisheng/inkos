@@ -83,6 +83,23 @@ export {
   fetchWithProxy,
   resolveProxyUrl,
 } from "./utils/proxy-fetch.js";
+export {
+  LOCAL_CODEX_MCP_MODEL_ID,
+  LOCAL_CODEX_MCP_SERVICE_ID,
+  buildLocalCodexPrompt,
+  checkLocalCodexMcpAvailability,
+  extractCodexMcpToolContent,
+  isLocalCodexMcpModel,
+  isLocalCodexMcpService,
+  runLocalCodexMcpCompletion,
+  type LocalCodexAvailability,
+} from "./llm/local-codex-mcp.js";
+export {
+  buildLocalCodexToolProtocolPrompt,
+  parseLocalCodexToolProtocolResponse,
+  streamLocalCodexMcpWithTools,
+  type ParsedLocalCodexToolProtocol,
+} from "./llm/local-codex-agent-stream.js";
 export { assertSafeBookId, deriveBookIdFromTitle, isSafeBookId } from "./utils/book-id.js";
 export { safeChildPath } from "./utils/path-safety.js";
 export {

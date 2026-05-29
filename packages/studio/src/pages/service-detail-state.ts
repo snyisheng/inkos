@@ -107,6 +107,7 @@ export async function saveServiceConfig(args: {
   readonly effectiveServiceId: string;
   readonly serviceId: string;
   readonly isCustom: boolean;
+  readonly apiKeyRequired?: boolean;
   readonly baseUrlOverrideEnabled?: boolean;
   readonly resolvedCustomName: string;
   readonly apiKey: string;
@@ -127,7 +128,9 @@ export async function saveServiceConfig(args: {
   const trimmedBaseUrl = args.baseUrl.trim();
   const shouldUseBaseUrl = args.isCustom || Boolean(args.baseUrlOverrideEnabled && trimmedBaseUrl);
 
-  if (!trimmedKey && !args.isCustom) {
+  const requiresApiKey = args.apiKeyRequired ?? !args.isCustom;
+
+  if (!trimmedKey && requiresApiKey) {
     return {
       status: { state: "error", message: "请先输入 API Key" },
       detectedModel: "",

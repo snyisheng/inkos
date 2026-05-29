@@ -180,7 +180,8 @@ export async function listModelsForService(
   const probeBaseUrl = liveBaseUrl || provider?.modelsBaseUrl || provider?.baseUrl || resolveServiceModelsBaseUrl(service);
   const providerFamily = preset?.providerFamily ?? (provider?.api.startsWith("anthropic") ? "anthropic" : "openai");
   const canProbeWithoutApiKey = isApiKeyOptionalForEndpoint({ provider: providerFamily, baseUrl: probeBaseUrl });
-  if ((apiKey || canProbeWithoutApiKey) && probeBaseUrl) {
+  const usesNonHttpTransport = service === "localCodexMcp";
+  if (!usesNonHttpTransport && (apiKey || canProbeWithoutApiKey) && probeBaseUrl) {
     const probed = await probeModelsFromUpstream(probeBaseUrl, apiKey ?? "", 10_000);
     if (probed.length > 0) {
       const { lookupModel } = await import("./providers/lookup.js");

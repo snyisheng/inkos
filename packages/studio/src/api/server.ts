@@ -34,6 +34,8 @@ import {
   getAllEndpoints,
   probeModelsFromUpstream,
   fetchWithProxy,
+  checkLocalCodexMcpAvailability,
+  isLocalCodexMcpService,
   chatCompletion,
   buildExportArtifact,
   GLOBAL_ENV_PATH,
@@ -1069,6 +1071,31 @@ async function probeServiceCapabilities(args: {
       : null;
 
   const baseService = isCustomServiceId(args.service) ? "custom" : args.service;
+  const endpoint = getAllEndpoints().find((ep) => ep.id === baseService);
+  const preset = resolveServicePreset(baseService);
+
+  if (isLocalCodexMcpService(baseService)) {
+    const availability = await checkLocalCodexMcpAvailability();
+    if (!availability.ok) {
+      return {
+        ok: false,
+        models: [],
+        error: availability.error ?? "本地 Codex MCP 不可用。",
+      };
+    }
+    const models = fallbackTextModelsForEndpoint(endpoint, preset);
+    const selectedModel = endpoint?.checkModel ?? models[0]?.id;
+    return {
+      ok: true,
+      models,
+      selectedModel,
+      apiFormat: "chat",
+      stream: false,
+      baseUrl: args.baseUrl,
+      modelsSource: "fallback",
+    };
+  }
+
   const modelsResponse = await fetchModelsFromServiceBaseUrl(baseService, args.baseUrl, args.apiKey, args.proxyUrl);
   if (modelsResponse.authFailed) {
     return {
@@ -1078,8 +1105,6 @@ async function probeServiceCapabilities(args: {
     };
   }
   const discoveredModels = modelsResponse.models;
-  const endpoint = getAllEndpoints().find((ep) => ep.id === baseService);
-  const preset = resolveServicePreset(baseService);
   const discoveredFirstModel =
     discoveredModels.find((model) => isTextChatModelId(model.id))?.id
     ?? discoveredModels[0]?.id;
@@ -1705,13 +1730,19 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string) {
     const secrets = await loadSecrets(root);
     const endpoints = getAllEndpoints().filter((ep) => ep.id !== "custom");
 
-    // Fast: only check connection status from secrets, no external API calls.
+    // Fast: secrets decide remote services; local Codex only checks the local MCP command.
+    const localCodexAvailability = endpoints.some((ep) => isLocalCodexMcpService(ep.id))
+      ? await checkLocalCodexMcpAvailability().catch(() => ({ ok: false as const }))
+      : { ok: false as const };
+
     const services = endpoints.map((ep) => ({
       service: ep.id,
       label: ep.label,
       group: ep.group,
       baseUrl: ep.baseUrl,
-      connected: Boolean(secrets.services[ep.id]?.apiKey),
+      connected: isLocalCodexMcpService(ep.id)
+        ? localCodexAvailability.ok
+        : Boolean(secrets.services[ep.id]?.apiKey),
     })).sort(compareServiceListItems);
 
     // Add custom services from inkos.json
@@ -2622,6 +2653,7 @@ export function createStudioServer(initialConfig: ProjectConfig, root: string) {
           }, 502);
         }
       }
+
 
       // Run pi-agent session
       const collectedToolExecs: CollectedToolExec[] = [];

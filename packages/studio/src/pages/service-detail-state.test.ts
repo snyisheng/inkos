@@ -193,6 +193,64 @@ describe("saveServiceConfig", () => {
     });
   });
 
+
+  it("saves local Codex MCP without requiring an API key", async () => {
+    const calls: string[] = [];
+    const bodies: unknown[] = [];
+    const fetchJsonImpl = vi.fn(async (path: string, init?: { body?: string }) => {
+      calls.push(path);
+      if (init?.body) bodies.push(JSON.parse(init.body));
+      if (path === "/services/localCodexMcp/test") {
+        return {
+          ok: true,
+          models: [{ id: "local-codex" }],
+          selectedModel: "local-codex",
+          detected: { apiFormat: "chat", stream: false },
+        };
+      }
+      if (path === "/services/localCodexMcp/secret") return { ok: true };
+      if (path === "/services/config") return { ok: true };
+      throw new Error(`unexpected path: ${path}`);
+    });
+
+    const result = await saveServiceConfig({
+      effectiveServiceId: "localCodexMcp",
+      serviceId: "localCodexMcp",
+      isCustom: false,
+      apiKeyRequired: false,
+      resolvedCustomName: "",
+      apiKey: "",
+      baseUrl: "",
+      apiFormat: "chat",
+      stream: true,
+      temperature: "1",
+      detectedModel: "",
+      fetchJsonImpl: fetchJsonImpl as never,
+    });
+
+    expect(calls).toEqual([
+      "/services/localCodexMcp/test",
+      "/services/localCodexMcp/secret",
+      "/services/config",
+    ]);
+    expect(bodies).toEqual([
+      { apiKey: "", apiFormat: "chat", stream: true },
+      { apiKey: "" },
+      {
+        service: "localCodexMcp",
+        defaultModel: "local-codex",
+        services: [
+          { service: "localCodexMcp", temperature: 1, apiFormat: "chat", stream: false },
+        ],
+      },
+    ]);
+    expect(result).toEqual({
+      detectedModel: "local-codex",
+      detectedConfig: { apiFormat: "chat", stream: false },
+      status: { state: "connected", models: [{ id: "local-codex" }] },
+    });
+  });
+
   it("reuses a matching successful test result when saving", async () => {
     const calls: string[] = [];
     const bodies: unknown[] = [];

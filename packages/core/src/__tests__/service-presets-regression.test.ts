@@ -82,6 +82,18 @@ describe("service-presets regression", () => {
       ]));
     });
 
+
+    it("exposes local Codex MCP as a token-free CodingPlan provider", async () => {
+      const preset = resolveServicePreset("localCodexMcp");
+      expect(preset).toMatchObject({
+        providerFamily: "openai",
+        api: "openai-completions",
+        baseUrl: "http://localhost/codex-mcp",
+      });
+      const models = await listModelsForService("localCodexMcp");
+      expect(models.map((m) => m.id)).toEqual(["local-codex"]);
+    });
+
     it("returns empty for custom service without apikey + baseUrl", async () => {
       const models = await listModelsForService("custom");
       expect(models).toEqual([]);

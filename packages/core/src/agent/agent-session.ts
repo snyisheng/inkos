@@ -28,6 +28,8 @@ import {
 } from "../interaction/session-transcript-restore.js";
 import type { TranscriptEvent, TranscriptRole } from "../interaction/session-transcript-schema.js";
 import { assertSafeBookId } from "../utils/book-id.js";
+import { isLocalCodexMcpModel } from "../llm/local-codex-mcp.js";
+import { streamLocalCodexMcpWithTools } from "../llm/local-codex-agent-stream.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -576,7 +578,9 @@ async function runAgentSessionUnlocked(
       },
       transformContext: createBookContextTransform(bookId, projectRoot),
       convertToLlm: (messages) => convertAgentMessagesForModel(messages, model),
-      streamFn: streamSimple,
+      // Only local Codex MCP uses a text-level tool protocol adapter.
+      // All original API providers keep the existing pi-ai streamSimple path unchanged.
+      streamFn: isLocalCodexMcpModel(model) ? streamLocalCodexMcpWithTools : streamSimple,
       getApiKey: (provider: string) => {
         if (config.apiKey) return config.apiKey;
         return getEnvApiKey(provider);

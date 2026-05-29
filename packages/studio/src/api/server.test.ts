@@ -35,6 +35,8 @@ const resolveServiceModelMock = vi.fn();
 const loadSecretsMock = vi.fn();
 const saveSecretsMock = vi.fn();
 const getServiceApiKeyMock = vi.fn();
+const checkLocalCodexMcpAvailabilityMock = vi.fn();
+const isLocalCodexMcpServiceMock = vi.fn((service: string | undefined) => service === "localCodexMcp");
 type ServicePresetMock = {
   providerFamily: "openai" | "anthropic";
   baseUrl: string;
@@ -49,6 +51,7 @@ const SERVICE_PRESETS_MOCK: Record<string, ServicePresetMock> = {
   google: { providerFamily: "openai", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", modelsBaseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", knownModels: [] as string[] },
   kkaiapi: { providerFamily: "openai", baseUrl: "https://api.kkaiapi.com/v1", modelsBaseUrl: "https://api.kkaiapi.com/v1", knownModels: [] as string[] },
   ollama: { providerFamily: "openai", baseUrl: "http://localhost:11434/v1", modelsBaseUrl: "http://localhost:11434/v1", knownModels: [] as string[] },
+  localCodexMcp: { providerFamily: "openai", baseUrl: "http://localhost/codex-mcp", modelsBaseUrl: "http://localhost/codex-mcp", knownModels: ["local-codex"] },
   custom: { providerFamily: "openai", baseUrl: "", knownModels: [] as string[] },
 };
 const resolveServicePresetMock = vi.fn((service: string) => SERVICE_PRESETS_MOCK[service]);
@@ -90,7 +93,7 @@ const endpointIdsByGroup = {
   local: ["githubCopilot", "ollama"],
   codingPlan: [
     "astronCodingPlan", "bailianCodingPlan", "codexForMeCodingPlan", "glmCodingPlan", "kimiCodingPlan", "kimicode",
-    "minimaxCodingPlan", "opencodeCodingPlan", "volcengineCodingPlan",
+    "localCodexMcp", "minimaxCodingPlan", "opencodeCodingPlan", "volcengineCodingPlan",
   ],
 } as const;
 const endpointMocks = [
@@ -102,6 +105,7 @@ const endpointMocks = [
     ...(id === "minimax" ? { checkModel: "MiniMax-M2.7" } : {}),
     ...(id === "ollama" ? { checkModel: "llama3.2:3b" } : {}),
     ...(id === "volcengine" ? { checkModel: "doubao-lite-32k" } : {}),
+    ...(id === "localCodexMcp" ? { checkModel: "local-codex" } : {}),
     models: [
       { id: `${id}-model`, maxOutput: 4096, contextWindowTokens: 32768, enabled: true },
       { id: `${id}-disabled`, maxOutput: 4096, contextWindowTokens: 32768, enabled: false },
@@ -244,6 +248,8 @@ vi.mock("@actalk/inkos-core", async (importOriginal) => {
     getAllEndpoints: getAllEndpointsMock,
     probeModelsFromUpstream: probeModelsFromUpstreamMock,
     fetchWithProxy: vi.fn((input: Parameters<typeof fetch>[0], init?: RequestInit) => fetch(input, init)),
+    checkLocalCodexMcpAvailability: checkLocalCodexMcpAvailabilityMock,
+    isLocalCodexMcpService: isLocalCodexMcpServiceMock,
     GLOBAL_ENV_PATH: join(tmpdir(), "inkos-global.env"),
   };
 });
@@ -407,6 +413,9 @@ describe("createStudioServer daemon lifecycle", () => {
     loadSecretsMock.mockReset();
     saveSecretsMock.mockReset();
     getServiceApiKeyMock.mockReset();
+    checkLocalCodexMcpAvailabilityMock.mockReset();
+    checkLocalCodexMcpAvailabilityMock.mockResolvedValue({ ok: true });
+    isLocalCodexMcpServiceMock.mockClear();
     resolveServicePresetMock.mockClear();
     resolveServiceProviderFamilyMock.mockClear();
     resolveServiceModelsBaseUrlMock.mockClear();
@@ -796,15 +805,16 @@ describe("createStudioServer daemon lifecycle", () => {
     expect(res.status).toBe(200);
     const body = await res.json() as { services: Array<{ service: string; group?: string; connected: boolean }> };
     const bank = body.services.filter((s) => !s.service.startsWith("custom"));
-    expect(bank.length).toBe(38);
+    expect(bank.length).toBe(39);
     expect(bank.every((s) => typeof s.group === "string")).toBe(true);
     expect(bank.filter((s) => s.group === "overseas")).toHaveLength(5);
     expect(bank.filter((s) => s.group === "china")).toHaveLength(18);
     expect(bank.filter((s) => s.group === "aggregator")).toHaveLength(4);
     expect(bank.filter((s) => s.group === "local")).toHaveLength(2);
-    expect(bank.filter((s) => s.group === "codingPlan")).toHaveLength(9);
+    expect(bank.filter((s) => s.group === "codingPlan")).toHaveLength(10);
     expect(bank.filter((s) => s.group === "aggregator").map((s) => s.service)[0]).toBe("kkaiapi");
     expect(body.services.find((s) => s.service === "moonshot")?.connected).toBe(true);
+    expect(body.services.find((s) => s.service === "localCodexMcp")?.connected).toBe(true);
     expect(body.services.find((s) => s.service === "custom:内网GPT")).toMatchObject({
       connected: true,
     });
@@ -2391,6 +2401,66 @@ describe("createStudioServer daemon lifecycle", () => {
       }),
       "检查当前状态",
     );
+  });
+
+  it("routes local Codex MCP chat through the agent tool path without an API key", async () => {
+    resolveServiceModelMock.mockResolvedValueOnce({
+      model: {
+        id: "local-codex",
+        name: "local-codex",
+        api: "openai-completions",
+        provider: "openai",
+        baseUrl: "http://localhost/codex-mcp",
+        reasoning: false,
+        input: ["text"],
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+        contextWindow: 400000,
+        maxTokens: 128000,
+      },
+      apiKey: "",
+    });
+    runAgentSessionMock.mockResolvedValueOnce({
+      responseText: "本地 Codex 工具链回复",
+      messages: [],
+    });
+
+    const { createStudioServer } = await import("./server.js");
+    const app = createStudioServer(cloneProjectConfig() as never, root);
+
+    const response = await app.request("http://localhost/api/v1/agent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        instruction: "测试本地 Codex",
+        activeBookId: "demo-book",
+        sessionId: "agent-session-1",
+        service: "localCodexMcp",
+        model: "local-codex",
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      response: "本地 Codex 工具链回复",
+      session: {
+        sessionId: "agent-session-1",
+        activeBookId: "demo-book",
+      },
+    });
+    expect(chatCompletionMock).not.toHaveBeenCalled();
+    expect(runAgentSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        apiKey: "",
+        bookId: "demo-book",
+        projectRoot: root,
+        model: expect.objectContaining({
+          id: "local-codex",
+          baseUrl: "http://localhost/codex-mcp",
+        }),
+      }),
+      "测试本地 Codex",
+    );
+    expect(appendManualSessionMessagesMock).not.toHaveBeenCalled();
   });
 
   it("routes write-next button instructions directly to the shared writer pipeline", async () => {

@@ -125,19 +125,19 @@ describe("providers structural integrity", () => {
     expect(nonCoding.length).toBe(30);
   });
 
-  it("B6：CodingPlan 9 个 provider 全部收录", () => {
+  it("B6：CodingPlan 10 个 provider 全部收录", () => {
     const ids = getAllEndpoints().map((p) => p.id);
     for (const id of [
       "kimiCodingPlan", "minimaxCodingPlan", "bailianCodingPlan",
       "glmCodingPlan", "volcengineCodingPlan", "opencodeCodingPlan",
-      "astronCodingPlan", "kimicode", "codexForMeCodingPlan",
+      "astronCodingPlan", "kimicode", "codexForMeCodingPlan", "localCodexMcp",
     ]) {
       expect(ids).toContain(id);
     }
   });
 
-  it("B6：总 provider 数 = 39 (30 base + 9 CodingPlan)", () => {
-    expect(getAllEndpoints().length).toBe(39);
+  it("B6：总 provider 数 = 40 (30 base + 10 CodingPlan)", () => {
+    expect(getAllEndpoints().length).toBe(40);
   });
 
   it("B6：CodingPlan provider 使用各自兼容协议", () => {
